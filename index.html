@@ -16,7 +16,7 @@
             color: #ff0000;
         }
 
-        /* Lado Esquerdo: O Balão SVG Interativo */
+        /* Lado Esquerdo: Painel do Balão */
         #left-panel {
             flex: 1;
             display: flex;
@@ -30,39 +30,42 @@
         #balloon-wrapper {
             position: relative;
             cursor: pointer;
-            text-align: center;
-            transition: transform 0.3s ease;
+            transition: transform 0.2s ease;
+            user-select: none;
         }
 
-        /* Balão de fala */
+        /* Nota de aviso */
         #speech-bubble {
             display: none;
             background: #fff;
             color: #000;
-            padding: 8px 12px;
+            padding: 8px 15px;
             border-radius: 15px;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 16px;
             position: absolute;
-            top: -60px;
+            top: -70px;
             left: 50%;
             transform: translateX(-50%);
             white-space: nowrap;
-            border: 2px solid #ff0000;
+            border: 3px solid #ff0000;
             z-index: 10;
         }
 
         #balloon-svg {
-            width: 150px;
-            height: 200px;
-            filter: drop-shadow(0 0 15px rgba(0, 255, 0, 0.4));
-            transition: filter 0.3s;
+            width: 200px;
+            height: 250px;
+            filter: drop-shadow(0 0 20px rgba(0, 255, 0, 0.3));
+            transition: all 0.3s ease;
         }
+
+        /* Dentes - Escondidos por padrão */
+        #teeth { display: none; }
 
         .floating { animation: float 4s ease-in-out infinite; }
         @keyframes float {
             0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
+            50% { transform: translateY(-30px); }
         }
 
         /* Lado Direito: Chat */
@@ -77,7 +80,7 @@
             padding: 20px;
             border-bottom: 1px solid #440000;
             text-align: center;
-            letter-spacing: 3px;
+            letter-spacing: 5px;
             font-weight: bold;
             text-shadow: 0 0 10px #ff0000;
         }
@@ -93,8 +96,9 @@
         .message {
             max-width: 80%;
             padding: 12px;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             font-size: 14px;
+            border-radius: 4px;
             animation: fadeIn 0.3s;
         }
 
@@ -123,9 +127,13 @@
                 <path id="balloon-body" d="M10,40 Q10,0 50,0 Q90,0 90,40 Q90,80 50,80 Q10,80 10,40" fill="#00ff00" />
                 <path d="M50,80 L50,150" stroke="white" stroke-width="2" fill="none" />
                 <g id="face">
-                    <circle cx="35" cy="35" r="3" fill="black" />
-                    <circle cx="65" cy="35" r="3" fill="black" />
-                    <path id="mouth" d="M40,55 Q50,65 60,55" stroke="black" stroke-width="2" fill="none" />
+                    <circle cx="35" cy="35" r="4" fill="black" />
+                    <circle cx="65" cy="35" r="4" fill="black" />
+                    <path id="mouth" d="M35,55 Q50,65 65,55" stroke="black" stroke-width="2" fill="none" />
+                    <g id="teeth" fill="white">
+                        <polygon points="40,58 45,58 42.5,65" />
+                        <polygon points="55,58 60,58 57.5,65" />
+                    </g>
                 </g>
             </svg>
         </div>
@@ -135,7 +143,7 @@
         <header>CHAT ANÔNIMO - GSO</header>
         <div id="messages"></div>
         <form id="input-area">
-            <input id="m" autocomplete="off" placeholder="[ escreva sua transmissão... ]" />
+            <input id="m" autocomplete="off" placeholder="[ digite sua transmissão... ]" />
             <button>ENVIAR</button>
         </form>
     </div>
@@ -145,28 +153,31 @@
         const userNumber = Math.floor(Math.random() * 999) + 1;
         const myColor = '#' + Math.floor(Math.random()*16777215).toString(16);
 
-        // --- Lógica do Balão ---
+        // --- Lógica do Balão Dark ---
         const wrapper = document.getElementById('balloon-wrapper');
         const body = document.getElementById('balloon-body');
         const mouth = document.getElementById('mouth');
+        const teeth = document.getElementById('teeth');
         const bubble = document.getElementById('speech-bubble');
         const svg = document.getElementById('balloon-svg');
 
         wrapper.addEventListener('click', () => {
-            // Fica Bravo e Vermelho
-            body.setAttribute('fill', '#ff0000');
-            mouth.setAttribute('d', 'M40,60 Q50,50 60,60'); // Boca triste/brava
-            svg.style.filter = 'drop-shadow(0 0 20px #ff0000)';
+            // Modo Dark/Bravo
+            body.setAttribute('fill', '#660000'); // Vermelho escuro
+            mouth.setAttribute('d', 'M35,60 Q50,50 65,60'); // Boca brava
+            teeth.style.display = 'block';
+            svg.style.filter = 'drop-shadow(0 0 25px #ff0000)';
             bubble.style.display = 'block';
-            wrapper.style.transform = 'scale(1.2) translateY(-30px)';
+            wrapper.style.transform = 'scale(1.2)';
 
-            // Volta ao normal após 3 segundos
+            // Reset após 3 segundos
             setTimeout(() => {
                 body.setAttribute('fill', '#00ff00');
-                mouth.setAttribute('d', 'M40,55 Q50,65 60,55'); // Boca feliz
-                svg.style.filter = 'drop-shadow(0 0 15px rgba(0, 255, 0, 0.4))';
+                mouth.setAttribute('d', 'M35,55 Q50,65 65,55');
+                teeth.style.display = 'none';
+                svg.style.filter = 'drop-shadow(0 0 20px rgba(0, 255, 0, 0.3))';
                 bubble.style.display = 'none';
-                wrapper.style.transform = 'scale(1) translateY(0)';
+                wrapper.style.transform = 'scale(1)';
             }, 3000);
         });
 
@@ -196,14 +207,13 @@
             messagesDiv.appendChild(item);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
-            // Apagar após 1 minuto
+            // Timer: Apagar após 1 minuto (60 segundos)
             setTimeout(() => {
-                item.style.transition = '0.5s';
+                item.style.transition = 'opacity 1s';
                 item.style.opacity = '0';
-                setTimeout(() => item.remove(), 500);
+                setTimeout(() => item.remove(), 1000);
             }, 60000);
         });
     </script>
 </body>
 </html>
-
