@@ -7,7 +7,6 @@
     <script src="/socket.io/socket.io.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        
         body { 
             font-family: 'Courier New', Courier, monospace; 
             background-color: #050000; 
@@ -17,7 +16,7 @@
             color: #ff0000;
         }
 
-        /* Lado Esquerdo: O Balão Solitário */
+        /* Painel Esquerdo com o Balão Interativo */
         #left-panel {
             flex: 1;
             display: flex;
@@ -25,21 +24,29 @@
             align-items: center;
             background: radial-gradient(circle, #1a0000 0%, #000 70%);
             border-right: 1px solid #440000;
+            position: relative;
         }
 
-        .it-balloon {
-            font-size: 50px;
-            filter: drop-shadow(0 0 15px #ff0000);
+        #balloon-container {
+            font-size: 80px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            user-select: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .balloon-float {
             animation: float 4s ease-in-out infinite;
-            cursor: default;
         }
 
         @keyframes float {
             0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
+            50% { transform: translateY(-30px); }
         }
 
-        /* Lado Direito: Chat Terror */
+        /* Lado Direito: Chat */
         #chat-panel {
             flex: 1.2;
             display: flex;
@@ -51,10 +58,9 @@
             padding: 20px;
             border-bottom: 1px solid #440000;
             text-align: center;
-            letter-spacing: 5px;
+            letter-spacing: 3px;
             font-weight: bold;
             text-shadow: 0 0 10px #ff0000;
-            text-transform: uppercase;
         }
 
         #messages {
@@ -63,19 +69,31 @@
             padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 10px;
         }
 
+        /* Alinhamento de Mensagens */
         .message {
-            padding: 12px;
-            border-left: 3px solid #ff0000;
-            background: rgba(20, 0, 0, 0.5);
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-bottom: 5px;
             font-size: 14px;
-            animation: fadeIn 0.3s;
-            word-wrap: break-word;
+            line-height: 1.4;
         }
 
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .msg-me {
+            align-self: flex-end;
+            background: rgba(60, 0, 0, 0.6);
+            border-right: 3px solid #ff0000;
+            color: #fff;
+        }
+
+        .msg-others {
+            align-self: flex-start;
+            background: rgba(20, 20, 20, 0.8);
+            border-left: 3px solid #444;
+        }
 
         #input-area {
             padding: 20px;
@@ -91,73 +109,89 @@
             padding: 12px;
             color: #ff0000;
             outline: none;
-            font-family: 'Courier New', monospace;
         }
 
         button {
             background: #660000;
             color: #fff;
             border: none;
-            padding: 0 25px;
+            padding: 0 20px;
             cursor: pointer;
             font-weight: bold;
-            text-transform: uppercase;
         }
 
         button:hover { background: #ff0000; }
-
-        /* Scrollbar */
-        #messages::-webkit-scrollbar { width: 5px; }
-        #messages::-webkit-scrollbar-track { background: #000; }
-        #messages::-webkit-scrollbar-thumb { background: #440000; }
     </style>
 </head>
 <body>
 
     <div id="left-panel">
-        <div class="it-balloon">🎈</div>
+        <div id="balloon-container" class="balloon-float">
+            <span id="balloon-face">🙂</span>
+            <span>🎈</span>
+        </div>
     </div>
 
     <div id="chat-panel">
-        <header>Chat Anônimo - GSO</header>
+        <header>CHAT ANÔNIMO - GSO</header>
         <div id="messages"></div>
         <form id="input-area">
             <input id="m" autocomplete="off" placeholder="[ escreva sua transmissão... ]" />
-            <button type="submit">ENVIAR</button>
+            <button>ENVIAR</button>
         </form>
     </div>
 
     <script>
         const socket = io();
-        
-        // Cores de balões para os usuários
-        const balloonColors = ['#ff0000', '#00ff00', '#0077ff', '#ffff00', '#ff00ff', '#00ffff', '#ffa500'];
-        const myColor = balloonColors[Math.floor(Math.random() * balloonColors.length)];
         const userNumber = Math.floor(Math.random() * 999) + 1;
+        const myColor = '#' + Math.floor(Math.random()*16777215).toString(16);
 
-        const form = document.getElementById('input-area');
-        const input = document.getElementById('m');
-        const messages = document.getElementById('messages');
+        // Lógica do Balão
+        const balloonDiv = document.getElementById('balloon-container');
+        const balloonFace = document.getElementById('balloon-face');
 
-        form.addEventListener('submit', function(e) {
+        balloonDiv.addEventListener('click', () => {
+            balloonFace.innerText = '😡'; // Cara brava
+            balloonDiv.style.transform = 'scale(1.3) translateY(-100px)'; // Voa/Aumenta
+            
+            setTimeout(() => {
+                balloonFace.innerText = '🙂'; // Volta a ficar feliz
+                balloonDiv.style.transform = 'scale(1) translateY(0)';
+            }, 4000);
+        });
+
+        // Lógica do Chat
+        const form = document.querySelector('form');
+        const input = document.querySelector('#m');
+        const messagesContainer = document.querySelector('#messages');
+
+        form.onsubmit = function(e) {
             e.preventDefault();
             if (input.value.trim()) {
-                socket.emit('chat message', {
+                const data = {
+                    id: socket.id, // Enviamos o ID para identificar quem é quem
                     user: "Usuário " + userNumber,
                     text: input.value,
                     color: myColor
-                });
+                };
+                socket.emit('chat message', data);
                 input.value = '';
             }
-        });
+        };
 
         socket.on('chat message', function(msg) {
             const item = document.createElement('div');
-            item.className = 'message';
-            // Cada usuário aparece com UM balão da sua cor sorteada
-            item.innerHTML = `<span style="color: ${msg.color}; filter: drop-shadow(0 0 3px ${msg.color})">🎈</span> <strong>${msg.user}:</strong> ${msg.text}`;
-            messages.appendChild(item);
-            messages.scrollTop = messages.scrollHeight;
+            
+            // Se o ID da mensagem for igual ao meu ID, vai pra direita
+            if (msg.id === socket.id) {
+                item.className = 'message msg-me';
+            } else {
+                item.className = 'message msg-others';
+            }
+
+            item.innerHTML = `<span style="color:${msg.color}">🎈</span> <strong>${msg.user}:</strong> ${msg.text}`;
+            messagesContainer.appendChild(item);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         });
     </script>
 </body>
