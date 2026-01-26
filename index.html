@@ -29,7 +29,7 @@
         const formulario = document.getElementById('form');
         const campoTexto = document.getElementById('input');
 
-        // BUSCAR MENSAGENS SALVAS: Carrega o histórico ao abrir a página
+        // Carrega o histórico do navegador ao abrir a página
         window.onload = () => {
             const memoria = localStorage.getItem('historico_chat');
             if (memoria) {
@@ -51,7 +51,7 @@
             item.textContent = msg;
             lista.appendChild(item);
             
-            // SALVAR NA MEMÓRIA: Guarda a lista para não sumir no F5
+            // Salva para não sumir no F5
             localStorage.setItem('historico_chat', lista.innerHTML);
             lista.scrollTop = lista.scrollHeight;
         });
