@@ -16,7 +16,7 @@
             color: #ff0000;
         }
 
-        /* Lado Esquerdo: Balão Interativo */
+        /* Lado Esquerdo: O Balão SVG Interativo */
         #left-panel {
             flex: 1;
             display: flex;
@@ -27,45 +27,42 @@
             position: relative;
         }
 
-        #balloon-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            cursor: pointer;
-            user-select: none;
+        #balloon-wrapper {
             position: relative;
+            cursor: pointer;
+            text-align: center;
+            transition: transform 0.3s ease;
         }
 
-        /* Balão de fala (Nota) */
+        /* Balão de fala */
         #speech-bubble {
             display: none;
             background: #fff;
             color: #000;
-            padding: 5px 10px;
-            border-radius: 10px;
+            padding: 8px 12px;
+            border-radius: 15px;
             font-weight: bold;
             font-size: 14px;
             position: absolute;
-            top: -50px;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
             white-space: nowrap;
             border: 2px solid #ff0000;
+            z-index: 10;
         }
 
-        #speech-bubble::after {
-            content: '';
-            position: absolute;
-            bottom: -10px;
-            left: 50%;
-            border-width: 10px 10px 0;
-            border-style: solid;
-            border-color: #fff transparent transparent;
-            transform: translateX(-50%);
+        #balloon-svg {
+            width: 150px;
+            height: 200px;
+            filter: drop-shadow(0 0 15px rgba(0, 255, 0, 0.4));
+            transition: filter 0.3s;
         }
 
-        #balloon-char {
-            font-size: 100px;
-            transition: all 0.3s ease;
-            filter: drop-shadow(0 0 15px rgba(0, 255, 0, 0.5));
+        .floating { animation: float 4s ease-in-out infinite; }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
         }
 
         /* Lado Direito: Chat */
@@ -99,7 +96,6 @@
             margin-bottom: 10px;
             font-size: 14px;
             animation: fadeIn 0.3s;
-            position: relative;
         }
 
         .msg-me { align-self: flex-end; background: rgba(60, 0, 0, 0.4); border-right: 4px solid #ff0000; text-align: right; }
@@ -121,9 +117,17 @@
 <body>
 
     <div id="left-panel">
-        <div id="balloon-container">
+        <div id="balloon-wrapper" class="floating">
             <div id="speech-bubble">pare seu merda</div>
-            <div id="balloon-char">🟢🙂</div>
+            <svg id="balloon-svg" viewBox="0 0 100 150">
+                <path id="balloon-body" d="M10,40 Q10,0 50,0 Q90,0 90,40 Q90,80 50,80 Q10,80 10,40" fill="#00ff00" />
+                <path d="M50,80 L50,150" stroke="white" stroke-width="2" fill="none" />
+                <g id="face">
+                    <circle cx="35" cy="35" r="3" fill="black" />
+                    <circle cx="65" cy="35" r="3" fill="black" />
+                    <path id="mouth" d="M40,55 Q50,65 60,55" stroke="black" stroke-width="2" fill="none" />
+                </g>
+            </svg>
         </div>
     </div>
 
@@ -142,33 +146,37 @@
         const myColor = '#' + Math.floor(Math.random()*16777215).toString(16);
 
         // --- Lógica do Balão ---
-        const container = document.getElementById('balloon-container');
-        const char = document.getElementById('balloon-char');
+        const wrapper = document.getElementById('balloon-wrapper');
+        const body = document.getElementById('balloon-body');
+        const mouth = document.getElementById('mouth');
         const bubble = document.getElementById('speech-bubble');
+        const svg = document.getElementById('balloon-svg');
 
-        container.addEventListener('click', () => {
-            // Estado Bravo
-            char.innerHTML = '🔴😡';
-            char.style.filter = 'drop-shadow(0 0 20px #ff0000)';
-            char.style.transform = 'scale(1.2) translateY(-20px)';
+        wrapper.addEventListener('click', () => {
+            // Fica Bravo e Vermelho
+            body.setAttribute('fill', '#ff0000');
+            mouth.setAttribute('d', 'M40,60 Q50,50 60,60'); // Boca triste/brava
+            svg.style.filter = 'drop-shadow(0 0 20px #ff0000)';
             bubble.style.display = 'block';
+            wrapper.style.transform = 'scale(1.2) translateY(-30px)';
 
             // Volta ao normal após 3 segundos
             setTimeout(() => {
-                char.innerHTML = '🟢🙂';
-                char.style.filter = 'drop-shadow(0 0 15px rgba(0, 255, 0, 0.5))';
-                char.style.transform = 'scale(1) translateY(0)';
+                body.setAttribute('fill', '#00ff00');
+                mouth.setAttribute('d', 'M40,55 Q50,65 60,55'); // Boca feliz
+                svg.style.filter = 'drop-shadow(0 0 15px rgba(0, 255, 0, 0.4))';
                 bubble.style.display = 'none';
+                wrapper.style.transform = 'scale(1) translateY(0)';
             }, 3000);
         });
 
         // --- Lógica do Chat ---
         const form = document.querySelector('form');
-        const input = document.querySelector('#m');
         const messagesDiv = document.querySelector('#messages');
 
-        form.onsubmit = function(e) {
+        form.onsubmit = (e) => {
             e.preventDefault();
+            const input = document.querySelector('#m');
             if (input.value.trim()) {
                 socket.emit('chat message', {
                     id: socket.id,
@@ -180,19 +188,19 @@
             }
         };
 
-        socket.on('chat message', function(msg) {
+        socket.on('chat message', (msg) => {
             const item = document.createElement('div');
             const isMe = msg.id === socket.id;
             item.className = isMe ? 'message msg-me' : 'message msg-others';
-            
             item.innerHTML = `<span style="color:${msg.color}">🎈</span> <strong>${msg.user}:</strong> ${msg.text}`;
             messagesDiv.appendChild(item);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
-            // Timer para apagar a mensagem após 1 minuto (60000 ms)
+            // Apagar após 1 minuto
             setTimeout(() => {
+                item.style.transition = '0.5s';
                 item.style.opacity = '0';
-                setTimeout(() => item.remove(), 500); // Remove do código após o efeito de sumir
+                setTimeout(() => item.remove(), 500);
             }, 60000);
         });
     </script>
