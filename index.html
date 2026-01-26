@@ -3,29 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>T.I. Secure Link Chat</title>
+    <title>T.I. Anonymous Chat</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
+        
         body { 
             font-family: 'Courier New', Courier, monospace; 
             background-color: #000; 
+            /* Fundo com carinhas de anônimo na esquerda */
+            background-image: url('https://www.transparenttextures.com/patterns/anonymous-mask.png');
+            background-attachment: fixed;
             display: flex; 
-            justify-content: center; 
+            justify-content: flex-end; /* Chat fixado na direita */
             align-items: center; 
             height: 100vh; 
-            overflow: hidden;
+            padding-right: 5%;
         }
         
         #chat-container { 
             width: 100%; 
-            max-width: 500px; 
+            max-width: 450px; 
             height: 90vh; 
-            background: #000; 
+            background: rgba(0, 0, 0, 0.9); 
             display: flex; 
             flex-direction: column; 
             border: 2px solid #39FF14; 
-            box-shadow: 0 0 20px #39FF14;
+            box-shadow: 0 0 30px rgba(57, 255, 20, 0.5);
+            border-radius: 10px;
         }
         
         #header { 
@@ -35,51 +40,61 @@
             text-align: center; 
             font-weight: bold; 
             border-bottom: 2px solid #39FF14;
-            text-transform: uppercase;
+            text-shadow: 0 0 10px #39FF14;
         }
         
         #mensagens { 
             flex: 1; 
-            padding: 15px; 
+            padding: 20px; 
             overflow-y: auto; 
             display: flex; 
             flex-direction: column; 
-            gap: 12px;
+            gap: 15px; 
         }
         
         #mensagens li { 
             list-style: none; 
-            padding: 10px; 
-            border: 1px solid #39FF14;
+            padding: 10px 15px; 
+            border-radius: 5px; 
+            max-width: 85%; 
             color: #39FF14;
-            background: rgba(57, 255, 20, 0.05);
-            word-wrap: break-word;
-        }
-
-        /* Estilo para as imagens que aparecerem no chat */
-        .chat-img {
-            max-width: 100%;
-            border-radius: 5px;
-            margin-top: 5px;
             border: 1px solid #39FF14;
+            background: rgba(57, 255, 20, 0.1);
+            position: relative;
         }
 
-        #form { display: flex; padding: 15px; background: #000; gap: 8px; border-top: 1px solid #39FF14; }
+        /* Mensagens na direita (Suas) e Esquerda (Outros) */
+        .minha-msg { align-self: flex-end; border-right: 5px solid #39FF14 !important; }
+        .outra-msg { align-self: flex-start; border-left: 5px solid #39FF14 !important; }
+
+        .chat-img { max-width: 100%; border-radius: 5px; margin-top: 5px; border: 1px solid #39FF14; }
+
+        #form { display: flex; padding: 15px; background: #000; gap: 10px; border-top: 1px solid #39FF14; }
         
         #input { 
             flex: 1; 
-            padding: 10px; 
+            padding: 12px; 
             border: 1px solid #39FF14; 
             background: #000; 
             color: #39FF14; 
             outline: none; 
         }
         
-        button { 
+        /* Botão de Anexo (Clip) */
+        .btn-anexo {
+            background: none;
+            border: 1px solid #39FF14;
+            color: #39FF14;
+            padding: 0 10px;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        button[type="submit"] { 
             background: #39FF14; 
             color: #000; 
             border: none; 
-            padding: 0 20px; 
+            padding: 10px 20px; 
             cursor: pointer; 
             font-weight: bold;
         }
@@ -88,11 +103,12 @@
 <body>
 
 <div id="chat-container">
-    <div id="header">Chat Anônimo - T.I. Multimedia</div>
+    <div id="header">T.I. ANONYMOUS NETWORK</div>
     <ul id="mensagens"></ul>
     <form id="form">
-        <input id="input" autocomplete="off" placeholder="Cole um link de imagem ou digite...">
-        <button type="submit">ENVIAR</button>
+        <button type="button" class="btn-anexo" onclick="mandarImagem()">📎</button>
+        <input id="input" autocomplete="off" placeholder="root@ti:~# ">
+        <button type="submit">SEND</button>
     </form>
 </div>
 
@@ -102,8 +118,12 @@
     const formulario = document.getElementById('form');
     const campoTexto = document.getElementById('input');
 
-    function checkImage(url) {
-        return(url.match(/\.(jpeg|jpg|gif|png)$/) != null);
+    // Função para o botão de anexo
+    function mandarImagem() {
+        const url = prompt("Cole o LINK da imagem (.jpg, .png, .gif):");
+        if (url) {
+            socket.emit('mensagem', url);
+        }
     }
 
     formulario.addEventListener('submit', (e) => {
@@ -117,17 +137,22 @@
     socket.on('mensagem', (msg) => {
         const item = document.createElement('li');
         
-        if(checkImage(msg)) {
-            item.innerHTML = `<div>> Arquivo recebido:</div><img src="${msg}" class="chat-img">`;
+        // Verifica se é imagem
+        const isImg = msg.match(/\.(jpeg|jpg|gif|png)$/) != null || msg.includes('images');
+        
+        if (isImg) {
+            item.innerHTML = `<img src="${msg}" class="chat-img">`;
         } else {
-            item.textContent = '> ' + msg;
+            item.textContent = msg;
         }
+
+        // Simulação de lado (Para teste: mensagens curtas na esquerda, longas na direita)
+        item.className = msg.length % 2 === 0 ? 'minha-msg' : 'outra-msg';
         
         lista.appendChild(item);
         lista.scrollTop = lista.scrollHeight;
     });
 </script>
 </body>
-</html>
 </html>
 
