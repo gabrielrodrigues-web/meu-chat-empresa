@@ -3,39 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Profissional</title>
+    <title>Chat Hello Kitty Neon</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e5ddd5; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            /* Fundo com várias Hello Kittys */
+            background-image: url('https://i.pinimg.com/originals/82/02/79/82027986872590632943232677610129.jpg'); 
+            background-size: cover;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+        }
         
-        #chat-container { width: 100%; max-width: 450px; height: 90vh; background: #fff; display: flex; flex-direction: column; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); overflow: hidden; }
+        #chat-container { 
+            width: 95%; 
+            max-width: 450px; 
+            height: 85vh; 
+            background: rgba(0, 0, 0, 0.8); /* Fundo escuro para o neon brilhar */
+            display: flex; 
+            flex-direction: column; 
+            border-radius: 20px; 
+            border: 3px solid #39FF14; /* Borda Verde Neon */
+            box-shadow: 0 0 20px #39FF14; /* Brilho Neon */
+            overflow: hidden; 
+        }
         
-        #header { background: #075e54; color: white; padding: 15px; text-align: center; font-weight: bold; font-size: 1.2rem; }
+        #header { 
+            background: #39FF14; 
+            color: black; 
+            padding: 15px; 
+            text-align: center; 
+            font-weight: bold; 
+            text-shadow: 0 0 5px #fff;
+        }
         
-        #mensagens { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); }
+        #mensagens { 
+            flex: 1; 
+            padding: 20px; 
+            overflow-y: auto; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; 
+        }
         
-        #mensagens li { list-style: none; padding: 8px 12px; border-radius: 8px; max-width: 80%; word-wrap: break-word; font-size: 0.95rem; line-height: 1.4; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        
-        /* Estilo para as mensagens */
-        .msg-recebida { background: #fff; align-self: flex-start; border-top-left-radius: 0; }
-        .msg-enviada { background: #dcf8c6; align-self: flex-end; border-top-right-radius: 0; }
+        #mensagens li { 
+            list-style: none; 
+            padding: 10px 15px; 
+            border-radius: 15px; 
+            max-width: 80%; 
+            color: white;
+            border: 1px solid #39FF14;
+            background: rgba(57, 255, 20, 0.1);
+            box-shadow: inset 0 0 10px #39FF14;
+        }
 
-        #form { display: flex; padding: 10px; background: #f0f0f0; gap: 10px; }
+        #form { display: flex; padding: 15px; background: rgba(0,0,0,0.9); gap: 10px; }
         
-        #input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 25px; outline: none; font-size: 1rem; }
+        #input { 
+            flex: 1; 
+            padding: 12px; 
+            border: 2px solid #39FF14; 
+            border-radius: 25px; 
+            background: #000; 
+            color: #39FF14; 
+            outline: none;
+            box-shadow: 0 0 5px #39FF14;
+        }
         
-        button { background: #128c7e; color: white; border: none; padding: 10px 20px; border-radius: 25px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        button:hover { background: #075e54; }
+        button { 
+            background: #39FF14; 
+            color: black; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 25px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            box-shadow: 0 0 10px #39FF14;
+        }
     </style>
 </head>
 <body>
 
 <div id="chat-container">
-    <div id="header">Comunicação Empresarial</div>
+    <div id="header">HELLO KITTY NEON CHAT</div>
     <ul id="mensagens"></ul>
     <form id="form">
-        <input id="input" autocomplete="off" placeholder="Digite sua mensagem...">
+        <input id="input" autocomplete="off" placeholder="Escreva algo neon...">
         <button type="submit">Enviar</button>
     </form>
 </div>
@@ -46,7 +102,6 @@
     const formulario = document.getElementById('form');
     const campoTexto = document.getElementById('input');
 
-    // Carrega o histórico do navegador (F5)
     window.onload = () => {
         const memoria = localStorage.getItem('historico_chat');
         if (memoria) {
@@ -58,7 +113,6 @@
     formulario.addEventListener('submit', (e) => {
         e.preventDefault();
         if (campoTexto.value) {
-            // Enviamos um objeto com a mensagem
             socket.emit('mensagem', campoTexto.value);
             campoTexto.value = '';
         }
@@ -67,18 +121,10 @@
     socket.on('mensagem', (msg) => {
         const item = document.createElement('li');
         item.textContent = msg;
-        
-        // Simulação simples: se for você, fica verde na direita. Se for outro, branco na esquerda.
-        // Como não temos login ainda, vamos alternar apenas para o visual ficar bonito.
-        item.className = 'msg-recebida'; 
-        
         lista.appendChild(item);
-        
-        // Salva para não sumir no F5
         localStorage.setItem('historico_chat', lista.innerHTML);
         lista.scrollTop = lista.scrollHeight;
     });
 </script>
-
 </body>
 </html>
