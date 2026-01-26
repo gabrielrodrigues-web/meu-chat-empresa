@@ -3,70 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat GSO - Switch</title>
+    <title>Chat GSO - Dual Reality</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; transition: all 0.4s ease; }
+        * { box-sizing: border-box; margin: 0; padding: 0; transition: all 0.3s ease-in-out; }
         
-        body { 
-            font-family: 'Comic Sans MS', cursive, sans-serif; 
-            display: flex; 
-            height: 100vh; 
-            overflow: hidden;
+        body { display: flex; height: 100vh; overflow: hidden; position: relative; }
+
+        /* --- TREMOR DE TRANSIÇÃO --- */
+        @keyframes shake {
+            0% { transform: translate(0,0); }
+            25% { transform: translate(-10px, 10px); }
+            50% { transform: translate(10px, -10px); }
+            75% { transform: translate(-10px, -10px); }
+            100% { transform: translate(0,0); }
+        }
+        .shake-effect { animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both; }
+
+        /* --- ESTRELINHAS QUE EXPLODEM --- */
+        .star-particle {
+            position: absolute;
+            color: #ffd700;
+            cursor: pointer;
+            z-index: 1;
+            animation: rise 5s linear forwards;
+            font-size: 20px;
+            user-select: none;
+        }
+        @keyframes rise {
+            from { transform: translateY(105vh) rotate(0deg); opacity: 1; }
+            to { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
         }
 
         /* --- TEMA CLARO (FOFO) --- */
-        body.fofo { background-color: #fff0f5; color: #ff69b4; }
+        body.fofo { background-color: #fff0f5; color: #ff69b4; font-family: 'Comic Sans MS', cursive; }
         .fofo #left-panel { background: #ffe4e1; border-right: 2px solid #ffb6c1; }
-        .fofo #chat-panel { background: #fff; }
-        .fofo header { border-bottom: 2px solid #ffb6c1; text-shadow: 1px 1px 2px #ff69b4; }
-        .fofo .msg-me { background: #ffe4e1; border-radius: 15px 15px 0 15px; color: #ff1493; align-self: flex-end; }
-        .fofo .msg-others { background: #f0f0f0; border-radius: 15px 15px 15px 0; color: #555; align-self: flex-start; }
+        .fofo #chat-panel { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); }
+        .fofo .msg-me { background: #ffb6c1; color: white; border-radius: 15px 15px 0 15px; align-self: flex-end; }
+        .fofo .msg-others { background: white; border: 1px solid #ffb6c1; border-radius: 15px 15px 15px 0; align-self: flex-start; }
         .fofo button { background: #ff69b4; color: white; border-radius: 20px; }
 
         /* --- TEMA DARK (TERROR) --- */
         body.dark { background-color: #050000; color: #ff0000; font-family: 'Courier New', monospace; }
+        body.dark .star-particle { display: none !important; }
         .dark #left-panel { background: radial-gradient(circle, #1a0000 0%, #000 70%); border-right: 1px solid #440000; }
         .dark #chat-panel { background: #000; }
-        .dark header { border-bottom: 1px solid #440000; text-shadow: 0 0 10px #ff0000; letter-spacing: 5px; }
-        .dark .msg-me { background: rgba(60, 0, 0, 0.4); border-right: 4px solid #ff0000; align-self: flex-end; border-radius: 0; }
-        .dark .msg-others { background: rgba(30, 30, 30, 0.6); border-left: 4px solid #444; align-self: flex-start; border-radius: 0; }
-        .dark button { background: #660000; color: #fff; border-radius: 0; }
+        .dark header { text-shadow: 0 0 10px #ff0000; letter-spacing: 5px; border-bottom: 1px solid #440000; }
+        .dark .msg-me { background: rgba(60, 0, 0, 0.5); border-right: 4px solid #ff0000; align-self: flex-end; }
+        .dark .msg-others { background: rgba(20, 20, 20, 0.8); border-left: 4px solid #444; align-self: flex-start; }
+        .dark button { background: #660000; color: #fff; }
         .dark input { background: #0a0000; border: 1px solid #440000; color: #ff0000; }
 
         /* Estrutura Geral */
-        #left-panel { flex: 1; display: flex; justify-content: center; align-items: center; }
-        #chat-panel { flex: 1.2; display: flex; flex-direction: column; }
+        #left-panel { flex: 1; display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden; }
+        #chat-panel { flex: 1.2; display: flex; flex-direction: column; z-index: 2; }
+        header { padding: 20px; text-align: center; font-weight: bold; }
         
-        #balloon-btn { 
-            font-size: 100px; 
-            cursor: pointer; 
-            user-select: none; 
-            animation: float 3s ease-in-out infinite;
-        }
+        #toggle-btn { font-size: 130px; cursor: pointer; z-index: 10; animation: float 3s ease-in-out infinite; filter: drop-shadow(0 0 10px rgba(255,215,0,0.5)); }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
 
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
-        }
-
-        header { padding: 20px; text-align: center; font-weight: bold; font-size: 1.2em; }
         #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
         .message { max-width: 80%; padding: 12px; font-size: 14px; }
-        #input-area { padding: 20px; border-top: 1px solid #ddd; display: flex; gap: 10px; }
-        input { flex: 1; padding: 12px; outline: none; border: 1px solid #ccc; }
+        #input-area { padding: 20px; display: flex; gap: 10px; }
+        input { flex: 1; padding: 12px; outline: none; border: 1px solid #ccc; font-family: inherit; }
         button { border: none; padding: 0 25px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
-<body class="fofo"> <div id="left-panel">
-        <div id="balloon-btn">🎈</div>
+<body class="fofo">
+
+    <div id="left-panel">
+        <div id="toggle-btn">⭐</div>
     </div>
 
     <div id="chat-panel">
-        <header id="main-header">✨ Chat Mágico - GSO ✨</header>
+        <header id="main-header">STARRY CHAT - GSO</header>
         <div id="messages"></div>
         <form id="input-area">
-            <input id="m" autocomplete="off" placeholder="Escreva aqui..." />
+            <input id="m" autocomplete="off" placeholder="Envie uma mensagem..." />
             <button>ENVIAR</button>
         </form>
     </div>
@@ -74,29 +87,53 @@
     <script>
         const socket = io();
         const userNumber = Math.floor(Math.random() * 999) + 1;
-        
         const body = document.body;
-        const balloonBtn = document.getElementById('balloon-btn');
+        const toggleBtn = document.getElementById('toggle-btn');
         const header = document.getElementById('main-header');
 
-        // --- Lógica de Troca de Tema ---
-        balloonBtn.addEventListener('click', () => {
+        // --- Lógica das Estrelas que Explodem ---
+        function createStar() {
+            if (!body.classList.contains('fofo')) return;
+            const star = document.createElement('div');
+            star.className = 'star-particle';
+            star.innerText = '✨';
+            star.style.left = Math.random() * 100 + 'vw';
+            star.style.animationDuration = (Math.random() * 3 + 3) + 's';
+            
+            // Explode ao passar o mouse
+            star.onmouseover = () => {
+                star.innerText = '💥';
+                star.style.transform = 'scale(2)';
+                star.style.transition = '0.2s';
+                setTimeout(() => star.remove(), 200);
+            };
+
+            document.body.appendChild(star);
+            setTimeout(() => { if(star) star.remove(); }, 6000);
+        }
+        setInterval(createStar, 400);
+
+        // --- Alternar Tema ---
+        toggleBtn.addEventListener('click', () => {
+            body.classList.add('shake-effect');
+            setTimeout(() => body.classList.remove('shake-effect'), 300);
+
             if (body.classList.contains('fofo')) {
-                // Mudar para DARK
                 body.classList.remove('fofo');
                 body.classList.add('dark');
-                balloonBtn.innerText = '🩸'; // Balão de sangue ou normal
-                header.innerText = '/> SISTEMA CRÍTICO - GSO';
+                toggleBtn.innerText = '🎈';
+                toggleBtn.style.filter = 'drop-shadow(0 0 20px #ff0000)';
+                header.innerText = '/> VOID_LOG - GSO';
             } else {
-                // Mudar para FOFO
                 body.classList.remove('dark');
                 body.classList.add('fofo');
-                balloonBtn.innerText = '🎈';
-                header.innerText = '✨ Chat Mágico - GSO ✨';
+                toggleBtn.innerText = '⭐';
+                toggleBtn.style.filter = 'drop-shadow(0 0 10px rgba(255,215,0,0.5))';
+                header.innerText = 'STARRY CHAT - GSO';
             }
         });
 
-        // --- Lógica do Chat ---
+        // --- Lógica de Mensagens ---
         const form = document.querySelector('form');
         const messagesDiv = document.querySelector('#messages');
 
@@ -117,12 +154,10 @@
             const item = document.createElement('div');
             const isMe = msg.id === socket.id;
             item.className = isMe ? 'message msg-me' : 'message msg-others';
-            
             item.innerHTML = `<strong>${msg.user}:</strong> ${msg.text}`;
             messagesDiv.appendChild(item);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
-
-            // Auto-delete após 1 minuto
+            
             setTimeout(() => {
                 item.style.opacity = '0';
                 setTimeout(() => item.remove(), 1000);
