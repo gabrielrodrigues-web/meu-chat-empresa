@@ -16,56 +16,46 @@
             color: #ff0000;
         }
 
-        /* Lado Esquerdo: Painel do Balão */
+        /* Painel Esquerdo */
         #left-panel {
             flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             background: radial-gradient(circle, #1a0000 0%, #000 70%);
             border-right: 1px solid #440000;
             position: relative;
+            overflow: hidden; /* Garante que o socorro não saia do painel */
         }
 
+        /* O Balão Arrastável */
         #balloon-wrapper {
-            position: relative;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-            user-select: none;
-        }
-
-        /* Nota de aviso */
-        #speech-bubble {
-            display: none;
-            background: #fff;
-            color: #000;
-            padding: 8px 15px;
-            border-radius: 15px;
-            font-weight: bold;
-            font-size: 16px;
             position: absolute;
-            top: -70px;
+            cursor: grab;
+            z-index: 100;
+            user-select: none;
+            top: 50%;
             left: 50%;
-            transform: translateX(-50%);
-            white-space: nowrap;
-            border: 3px solid #ff0000;
-            z-index: 10;
+            transform: translate(-50%, -50%);
         }
+        #balloon-wrapper:active { cursor: grabbing; }
 
         #balloon-svg {
-            width: 200px;
-            height: 250px;
-            filter: drop-shadow(0 0 20px rgba(0, 255, 0, 0.3));
-            transition: all 0.3s ease;
+            width: 120px;
+            height: 160px;
+            filter: drop-shadow(0 0 20px #ff0000);
         }
 
-        /* Dentes - Escondidos por padrão */
-        #teeth { display: none; }
-
-        .floating { animation: float 4s ease-in-out infinite; }
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-30px); }
+        /* O Pedido de Socorro que Persegue */
+        #follower-text {
+            position: absolute;
+            color: rgba(255, 0, 0, 0.6);
+            font-size: 12px;
+            font-weight: bold;
+            pointer-events: none; /* Não atrapalha o clique no balão */
+            white-space: nowrap;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 5px #ff0000;
+            z-index: 50;
+            transition: all 1.5s cubic-bezier(0.19, 1, 0.22, 1); /* Efeito de rastro/atraso */
         }
 
         /* Lado Direito: Chat */
@@ -98,7 +88,6 @@
             padding: 12px;
             margin-bottom: 15px;
             font-size: 14px;
-            border-radius: 4px;
             animation: fadeIn 0.3s;
         }
 
@@ -121,20 +110,12 @@
 <body>
 
     <div id="left-panel">
-        <div id="balloon-wrapper" class="floating">
-            <div id="speech-bubble">pare seu merda</div>
+        <div id="follower-text">S O C O R R O . . .</div>
+        
+        <div id="balloon-wrapper">
             <svg id="balloon-svg" viewBox="0 0 100 150">
-                <path id="balloon-body" d="M10,40 Q10,0 50,0 Q90,0 90,40 Q90,80 50,80 Q10,80 10,40" fill="#00ff00" />
-                <path d="M50,80 L50,150" stroke="white" stroke-width="2" fill="none" />
-                <g id="face">
-                    <circle cx="35" cy="35" r="4" fill="black" />
-                    <circle cx="65" cy="35" r="4" fill="black" />
-                    <path id="mouth" d="M35,55 Q50,65 65,55" stroke="black" stroke-width="2" fill="none" />
-                    <g id="teeth" fill="white">
-                        <polygon points="40,58 45,58 42.5,65" />
-                        <polygon points="55,58 60,58 57.5,65" />
-                    </g>
-                </g>
+                <path d="M10,40 Q10,0 50,0 Q90,0 90,40 Q90,80 50,80 Q10,80 10,40" fill="#660000" />
+                <path d="M50,80 L50,150" stroke="red" stroke-width="2" fill="none" />
             </svg>
         </div>
     </div>
@@ -153,32 +134,40 @@
         const userNumber = Math.floor(Math.random() * 999) + 1;
         const myColor = '#' + Math.floor(Math.random()*16777215).toString(16);
 
-        // --- Lógica do Balão Dark ---
-        const wrapper = document.getElementById('balloon-wrapper');
-        const body = document.getElementById('balloon-body');
-        const mouth = document.getElementById('mouth');
-        const teeth = document.getElementById('teeth');
-        const bubble = document.getElementById('speech-bubble');
-        const svg = document.getElementById('balloon-svg');
+        // --- Lógica de Arrastar o Balão ---
+        const balloon = document.getElementById('balloon-wrapper');
+        const panel = document.getElementById('left-panel');
+        const helpText = document.getElementById('follower-text');
+        
+        let isDragging = false;
 
-        wrapper.addEventListener('click', () => {
-            // Modo Dark/Bravo
-            body.setAttribute('fill', '#660000'); // Vermelho escuro
-            mouth.setAttribute('d', 'M35,60 Q50,50 65,60'); // Boca brava
-            teeth.style.display = 'block';
-            svg.style.filter = 'drop-shadow(0 0 25px #ff0000)';
-            bubble.style.display = 'block';
-            wrapper.style.transform = 'scale(1.2)';
+        balloon.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            balloon.style.transition = "none";
+        });
 
-            // Reset após 3 segundos
-            setTimeout(() => {
-                body.setAttribute('fill', '#00ff00');
-                mouth.setAttribute('d', 'M35,55 Q50,65 65,55');
-                teeth.style.display = 'none';
-                svg.style.filter = 'drop-shadow(0 0 20px rgba(0, 255, 0, 0.3))';
-                bubble.style.display = 'none';
-                wrapper.style.transform = 'scale(1)';
-            }, 3000);
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            // Restringe o movimento dentro do painel esquerdo
+            const rect = panel.getBoundingClientRect();
+            let x = e.clientX - rect.left;
+            let y = e.clientY - rect.top;
+
+            // Mantém o balão nos limites
+            x = Math.max(50, Math.min(x, rect.width - 50));
+            y = Math.max(80, Math.min(y, rect.height - 80));
+
+            balloon.style.left = x + 'px';
+            balloon.style.top = y + 'px';
+
+            // Faz o texto de socorro seguir com um pequeno atraso (via CSS transition)
+            helpText.style.left = (x - 40) + 'px';
+            helpText.style.top = (y + 100) + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
         });
 
         // --- Lógica do Chat ---
@@ -207,7 +196,6 @@
             messagesDiv.appendChild(item);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
-            // Timer: Apagar após 1 minuto (60 segundos)
             setTimeout(() => {
                 item.style.transition = 'opacity 1s';
                 item.style.opacity = '0';
@@ -217,3 +205,4 @@
     </script>
 </body>
 </html>
+
