@@ -3,128 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Anônimo - GSO</title>
+    <title>Chat GSO - Switch</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; transition: all 0.4s ease; }
+        
         body { 
-            font-family: 'Courier New', Courier, monospace; 
-            background-color: #050000; 
+            font-family: 'Comic Sans MS', cursive, sans-serif; 
             display: flex; 
             height: 100vh; 
             overflow: hidden;
-            color: #ff0000;
         }
 
-        /* Painel Esquerdo */
-        #left-panel {
-            flex: 1;
-            background: radial-gradient(circle, #1a0000 0%, #000 70%);
-            border-right: 1px solid #440000;
-            position: relative;
-            overflow: hidden; /* Garante que o socorro não saia do painel */
+        /* --- TEMA CLARO (FOFO) --- */
+        body.fofo { background-color: #fff0f5; color: #ff69b4; }
+        .fofo #left-panel { background: #ffe4e1; border-right: 2px solid #ffb6c1; }
+        .fofo #chat-panel { background: #fff; }
+        .fofo header { border-bottom: 2px solid #ffb6c1; text-shadow: 1px 1px 2px #ff69b4; }
+        .fofo .msg-me { background: #ffe4e1; border-radius: 15px 15px 0 15px; color: #ff1493; align-self: flex-end; }
+        .fofo .msg-others { background: #f0f0f0; border-radius: 15px 15px 15px 0; color: #555; align-self: flex-start; }
+        .fofo button { background: #ff69b4; color: white; border-radius: 20px; }
+
+        /* --- TEMA DARK (TERROR) --- */
+        body.dark { background-color: #050000; color: #ff0000; font-family: 'Courier New', monospace; }
+        .dark #left-panel { background: radial-gradient(circle, #1a0000 0%, #000 70%); border-right: 1px solid #440000; }
+        .dark #chat-panel { background: #000; }
+        .dark header { border-bottom: 1px solid #440000; text-shadow: 0 0 10px #ff0000; letter-spacing: 5px; }
+        .dark .msg-me { background: rgba(60, 0, 0, 0.4); border-right: 4px solid #ff0000; align-self: flex-end; border-radius: 0; }
+        .dark .msg-others { background: rgba(30, 30, 30, 0.6); border-left: 4px solid #444; align-self: flex-start; border-radius: 0; }
+        .dark button { background: #660000; color: #fff; border-radius: 0; }
+        .dark input { background: #0a0000; border: 1px solid #440000; color: #ff0000; }
+
+        /* Estrutura Geral */
+        #left-panel { flex: 1; display: flex; justify-content: center; align-items: center; }
+        #chat-panel { flex: 1.2; display: flex; flex-direction: column; }
+        
+        #balloon-btn { 
+            font-size: 100px; 
+            cursor: pointer; 
+            user-select: none; 
+            animation: float 3s ease-in-out infinite;
         }
 
-        /* O Balão Arrastável */
-        #balloon-wrapper {
-            position: absolute;
-            cursor: grab;
-            z-index: 100;
-            user-select: none;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-        #balloon-wrapper:active { cursor: grabbing; }
-
-        #balloon-svg {
-            width: 120px;
-            height: 160px;
-            filter: drop-shadow(0 0 20px #ff0000);
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
         }
 
-        /* O Pedido de Socorro que Persegue */
-        #follower-text {
-            position: absolute;
-            color: rgba(255, 0, 0, 0.6);
-            font-size: 12px;
-            font-weight: bold;
-            pointer-events: none; /* Não atrapalha o clique no balão */
-            white-space: nowrap;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 0 0 5px #ff0000;
-            z-index: 50;
-            transition: all 1.5s cubic-bezier(0.19, 1, 0.22, 1); /* Efeito de rastro/atraso */
-        }
-
-        /* Lado Direito: Chat */
-        #chat-panel {
-            flex: 1.2;
-            display: flex;
-            flex-direction: column;
-            background-color: #000;
-        }
-
-        header {
-            padding: 20px;
-            border-bottom: 1px solid #440000;
-            text-align: center;
-            letter-spacing: 5px;
-            font-weight: bold;
-            text-shadow: 0 0 10px #ff0000;
-        }
-
-        #messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .message {
-            max-width: 80%;
-            padding: 12px;
-            margin-bottom: 15px;
-            font-size: 14px;
-            animation: fadeIn 0.3s;
-        }
-
-        .msg-me { align-self: flex-end; background: rgba(60, 0, 0, 0.4); border-right: 4px solid #ff0000; text-align: right; }
-        .msg-others { align-self: flex-start; background: rgba(30, 30, 30, 0.6); border-left: 4px solid #444; }
-
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        #input-area {
-            padding: 20px;
-            border-top: 1px solid #440000;
-            display: flex;
-            gap: 10px;
-        }
-
-        input { flex: 1; background: #0a0000; border: 1px solid #440000; padding: 12px; color: #ff0000; outline: none; }
-        button { background: #660000; color: #fff; border: none; padding: 0 20px; font-weight: bold; cursor: pointer; }
+        header { padding: 20px; text-align: center; font-weight: bold; font-size: 1.2em; }
+        #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .message { max-width: 80%; padding: 12px; font-size: 14px; }
+        #input-area { padding: 20px; border-top: 1px solid #ddd; display: flex; gap: 10px; }
+        input { flex: 1; padding: 12px; outline: none; border: 1px solid #ccc; }
+        button { border: none; padding: 0 25px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
-<body>
-
-    <div id="left-panel">
-        <div id="follower-text">S O C O R R O . . .</div>
-        
-        <div id="balloon-wrapper">
-            <svg id="balloon-svg" viewBox="0 0 100 150">
-                <path d="M10,40 Q10,0 50,0 Q90,0 90,40 Q90,80 50,80 Q10,80 10,40" fill="#660000" />
-                <path d="M50,80 L50,150" stroke="red" stroke-width="2" fill="none" />
-            </svg>
-        </div>
+<body class="fofo"> <div id="left-panel">
+        <div id="balloon-btn">🎈</div>
     </div>
 
     <div id="chat-panel">
-        <header>CHAT ANÔNIMO - GSO</header>
+        <header id="main-header">✨ Chat Mágico - GSO ✨</header>
         <div id="messages"></div>
         <form id="input-area">
-            <input id="m" autocomplete="off" placeholder="[ digite sua transmissão... ]" />
+            <input id="m" autocomplete="off" placeholder="Escreva aqui..." />
             <button>ENVIAR</button>
         </form>
     </div>
@@ -132,42 +74,26 @@
     <script>
         const socket = io();
         const userNumber = Math.floor(Math.random() * 999) + 1;
-        const myColor = '#' + Math.floor(Math.random()*16777215).toString(16);
-
-        // --- Lógica de Arrastar o Balão ---
-        const balloon = document.getElementById('balloon-wrapper');
-        const panel = document.getElementById('left-panel');
-        const helpText = document.getElementById('follower-text');
         
-        let isDragging = false;
+        const body = document.body;
+        const balloonBtn = document.getElementById('balloon-btn');
+        const header = document.getElementById('main-header');
 
-        balloon.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            balloon.style.transition = "none";
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-
-            // Restringe o movimento dentro do painel esquerdo
-            const rect = panel.getBoundingClientRect();
-            let x = e.clientX - rect.left;
-            let y = e.clientY - rect.top;
-
-            // Mantém o balão nos limites
-            x = Math.max(50, Math.min(x, rect.width - 50));
-            y = Math.max(80, Math.min(y, rect.height - 80));
-
-            balloon.style.left = x + 'px';
-            balloon.style.top = y + 'px';
-
-            // Faz o texto de socorro seguir com um pequeno atraso (via CSS transition)
-            helpText.style.left = (x - 40) + 'px';
-            helpText.style.top = (y + 100) + 'px';
-        });
-
-        document.addEventListener('mouseup', () => {
-            isDragging = false;
+        // --- Lógica de Troca de Tema ---
+        balloonBtn.addEventListener('click', () => {
+            if (body.classList.contains('fofo')) {
+                // Mudar para DARK
+                body.classList.remove('fofo');
+                body.classList.add('dark');
+                balloonBtn.innerText = '🩸'; // Balão de sangue ou normal
+                header.innerText = '/> SISTEMA CRÍTICO - GSO';
+            } else {
+                // Mudar para FOFO
+                body.classList.remove('dark');
+                body.classList.add('fofo');
+                balloonBtn.innerText = '🎈';
+                header.innerText = '✨ Chat Mágico - GSO ✨';
+            }
         });
 
         // --- Lógica do Chat ---
@@ -181,8 +107,7 @@
                 socket.emit('chat message', {
                     id: socket.id,
                     user: "Usuário " + userNumber,
-                    text: input.value,
-                    color: myColor
+                    text: input.value
                 });
                 input.value = '';
             }
@@ -192,12 +117,13 @@
             const item = document.createElement('div');
             const isMe = msg.id === socket.id;
             item.className = isMe ? 'message msg-me' : 'message msg-others';
-            item.innerHTML = `<span style="color:${msg.color}">🎈</span> <strong>${msg.user}:</strong> ${msg.text}`;
+            
+            item.innerHTML = `<strong>${msg.user}:</strong> ${msg.text}`;
             messagesDiv.appendChild(item);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
+            // Auto-delete após 1 minuto
             setTimeout(() => {
-                item.style.transition = 'opacity 1s';
                 item.style.opacity = '0';
                 setTimeout(() => item.remove(), 1000);
             }, 60000);
