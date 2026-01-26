@@ -3,113 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>T.I. Anonymous - Dunhill</title>
+    <title>Chat Anônimo - GSO</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
+        
         body { 
             font-family: 'Courier New', Courier, monospace; 
-            background-color: #000; 
+            background-color: #050000; 
             display: flex; 
             height: 100vh; 
             overflow: hidden;
+            color: #ff0000;
         }
-        /* Lado Esquerdo: Imagem da Dunhill */
+
+        /* Lado Esquerdo: O Balão Solitário */
         #left-panel {
             flex: 1;
-            background-image: url('https://i.imgur.com/K6V8rXy.jpeg');
-            background-size: cover;
-            background-position: center;
-            border-right: 2px solid #00ff00;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle, #1a0000 0%, #000 70%);
+            border-right: 1px solid #440000;
         }
-        /* Lado Direito: Chat */
+
+        .it-balloon {
+            font-size: 50px;
+            filter: drop-shadow(0 0 15px #ff0000);
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* Lado Direito: Chat Terror */
         #chat-panel {
-            flex: 1;
+            flex: 1.2;
             display: flex;
             flex-direction: column;
             background-color: #000;
         }
+
         header {
-            padding: 15px;
-            border-bottom: 2px solid #00ff00;
-            color: #00ff00;
+            padding: 20px;
+            border-bottom: 1px solid #440000;
             text-align: center;
+            letter-spacing: 5px;
             font-weight: bold;
+            text-shadow: 0 0 10px #ff0000;
         }
+
         #messages {
             flex: 1;
             overflow-y: auto;
             padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 15px;
+            background-image: linear-gradient(rgba(255, 0, 0, 0.02) 1px, transparent 1px);
+            background-size: 100% 3px;
         }
+
         .message {
-            padding: 10px;
-            border: 1px solid #00ff00;
-            color: #00ff00;
-            background: rgba(0, 255, 0, 0.05);
+            padding: 12px;
+            border-left: 3px solid #ff0000;
+            background: rgba(20, 0, 0, 0.5);
+            font-size: 14px;
+            animation: fadeIn 0.5s;
         }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
         #input-area {
             padding: 20px;
-            border-top: 2px solid #00ff00;
+            border-top: 1px solid #440000;
             display: flex;
             gap: 10px;
         }
+
         input {
             flex: 1;
-            background: #000;
-            border: 1px solid #00ff00;
+            background: #0a0000;
+            border: 1px solid #440000;
             padding: 12px;
-            color: #00ff00;
+            color: #ff0000;
             outline: none;
+            font-family: 'Courier New', monospace;
         }
+
         button {
-            background: #00ff00;
-            color: #000;
+            background: #660000;
+            color: #fff;
             border: none;
-            padding: 0 20px;
-            font-weight: bold;
+            padding: 0 25px;
             cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
         }
+
+        button:hover { background: #ff0000; }
+
+        #messages::-webkit-scrollbar { width: 5px; }
+        #messages::-webkit-scrollbar-thumb { background: #330000; }
     </style>
-</head>
+ head>
 <body>
-    <div id="left-panel"></div>
+
+    <div id="left-panel">
+        <div class="it-balloon">🎈</div>
+    </div>
+
     <div id="chat-panel">
-        <header>SISTEMA ANÔNIMO - DUNHILL</header>
+        <header>/> CHAT ANÔNIMO - GSO</header>
         <div id="messages"></div>
         <form id="input-area">
-            <input id="m" autocomplete="off" placeholder="Digite sua mensagem..." />
+            <input id="m" autocomplete="off" placeholder="[ escreva sua transmissão... ]" />
             <button>ENVIAR</button>
         </form>
     </div>
+
     <script>
         const socket = io();
-        const userNumber = Math.floor(Math.random() * 999) + 1;
-        const form = document.querySelector('form');
-        const input = document.querySelector('#m');
-        const messages = document.querySelector('#messages');
+        
+        // Lista de cores de balões para cada usuário
+        const balloons = ['🎈', '🎈', '🎈', '🎈', '🎈']; 
+        const balloonColors = ['#ff0000', '#ff00ff', '#ff8800', '#ffff00', '#00ffff'];
+        const randomIndex = Math.floor(Math.random() * balloonColors.length);
+        
+        // Cada usuário terá UM balão de uma cor específica
+        const myBalloon = balloons[0]; 
+        const myColor = balloonColors[randomIndex];
+        const userNumber = Math.floor(Math.random() * 999);
+
+        const form = document.getElementById('input-area');
+        const input = document.getElementById('m');
+        const messages = document.getElementById('messages');
 
         form.onsubmit = function(e) {
             e.preventDefault();
             if (input.value) {
                 socket.emit('chat message', {
                     user: "Usuário " + userNumber,
-                    text: input.value
+                    text: input.value,
+                    balloon: myBalloon,
+                    color: myColor
                 });
                 input.value = '';
             }
+            return false;
         };
 
         socket.on('chat message', function(msg) {
             const item = document.createElement('div');
             item.className = 'message';
-            item.innerHTML = `<strong>${msg.user}:</strong> ${msg.text}`;
+            // Exibe o balão colorido do usuário
+            item.innerHTML = `<span style="color: ${msg.color}; filter: drop-shadow(0 0 5px ${msg.color})">${msg.balloon}</span> <strong>${msg.user}:</strong> ${msg.text}`;
             messages.appendChild(item);
             messages.scrollTop = messages.scrollHeight;
         });
     </script>
 </body>
 </html>
+
 
