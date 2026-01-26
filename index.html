@@ -5,8 +5,8 @@
     <title>Chat Empresa</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { font-family: sans-serif; margin: 0; padding: 20px; background: #f4f4f4; }
-        #chat { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        body { font-family: sans-serif; margin: 0; padding: 20px; background: #f4f4f4; display: flex; justify-content: center; }
+        #chat { width: 100%; max-width: 600px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         #mensagens { list-style: none; padding: 0; height: 300px; overflow-y: auto; border: 1px solid #ddd; margin-bottom: 10px; background: #fff; }
         #mensagens li { padding: 8px; border-bottom: 1px solid #eee; }
         #form { display: flex; }
@@ -18,26 +18,31 @@
     <div id="chat">
         <ul id="mensagens"></ul>
         <form id="form">
-            <input id="input" autocomplete="off" placeholder="Digite sua mensagem..."><button>Enviar</button>
+            <input id="input" autocomplete="off" placeholder="Digite sua mensagem...">
+            <button type="submit">Enviar</button>
         </form>
     </div>
 
     <script>
         const socket = io();
         const lista = document.getElementById('mensagens');
+        const formulario = document.getElementById('form');
+        const campoTexto = document.getElementById('input');
 
-        // BUSCAR MENSAGENS SALVAS: Assim que abrir, ele olha a memória do navegador
+        // BUSCAR MENSAGENS SALVAS: Carrega o histórico ao abrir a página
         window.onload = () => {
             const memoria = localStorage.getItem('historico_chat');
-            if (memoria) lista.innerHTML = memoria;
+            if (memoria) {
+                lista.innerHTML = memoria;
+                lista.scrollTop = lista.scrollHeight;
+            }
         };
 
-        document.getElementById('form').addEventListener('submit', (e) => {
+        formulario.addEventListener('submit', (e) => {
             e.preventDefault();
-            const input = document.getElementById('input');
-            if (input.value) {
-                socket.emit('mensagem', input.value);
-                input.value = '';
+            if (campoTexto.value) {
+                socket.emit('mensagem', campoTexto.value);
+                campoTexto.value = '';
             }
         });
 
@@ -46,9 +51,9 @@
             item.textContent = msg;
             lista.appendChild(item);
             
-            // SALVAR NA MEMÓRIA: Guarda a lista atualizada no navegador
+            // SALVAR NA MEMÓRIA: Guarda a lista para não sumir no F5
             localStorage.setItem('historico_chat', lista.innerHTML);
-            lista.scrollTop = lista.scrollHeight; // Desce o chat automaticamente
+            lista.scrollTop = lista.scrollHeight;
         });
     </script>
 </body>
