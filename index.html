@@ -2,59 +2,83 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Chat Empresa</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Profissional</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { font-family: sans-serif; margin: 0; padding: 20px; background: #f4f4f4; display: flex; justify-content: center; }
-        #chat { width: 100%; max-width: 600px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        #mensagens { list-style: none; padding: 0; height: 300px; overflow-y: auto; border: 1px solid #ddd; margin-bottom: 10px; background: #fff; }
-        #mensagens li { padding: 8px; border-bottom: 1px solid #eee; }
-        #form { display: flex; }
-        input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
-        button { padding: 10px; background: #28a745; color: white; border: none; border-radius: 4px; margin-left: 5px; cursor: pointer; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e5ddd5; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        
+        #chat-container { width: 100%; max-width: 450px; height: 90vh; background: #fff; display: flex; flex-direction: column; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); overflow: hidden; }
+        
+        #header { background: #075e54; color: white; padding: 15px; text-align: center; font-weight: bold; font-size: 1.2rem; }
+        
+        #mensagens { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); }
+        
+        #mensagens li { list-style: none; padding: 8px 12px; border-radius: 8px; max-width: 80%; word-wrap: break-word; font-size: 0.95rem; line-height: 1.4; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        
+        /* Estilo para as mensagens */
+        .msg-recebida { background: #fff; align-self: flex-start; border-top-left-radius: 0; }
+        .msg-enviada { background: #dcf8c6; align-self: flex-end; border-top-right-radius: 0; }
+
+        #form { display: flex; padding: 10px; background: #f0f0f0; gap: 10px; }
+        
+        #input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 25px; outline: none; font-size: 1rem; }
+        
+        button { background: #128c7e; color: white; border: none; padding: 10px 20px; border-radius: 25px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        button:hover { background: #075e54; }
     </style>
 </head>
 <body>
-    <div id="chat">
-        <ul id="mensagens"></ul>
-        <form id="form">
-            <input id="input" autocomplete="off" placeholder="Digite sua mensagem...">
-            <button type="submit">Enviar</button>
-        </form>
-    </div>
 
-    <script>
-        const socket = io();
-        const lista = document.getElementById('mensagens');
-        const formulario = document.getElementById('form');
-        const campoTexto = document.getElementById('input');
+<div id="chat-container">
+    <div id="header">Comunicação Empresarial</div>
+    <ul id="mensagens"></ul>
+    <form id="form">
+        <input id="input" autocomplete="off" placeholder="Digite sua mensagem...">
+        <button type="submit">Enviar</button>
+    </form>
+</div>
 
-        // Carrega o histórico do navegador ao abrir a página
-        window.onload = () => {
-            const memoria = localStorage.getItem('historico_chat');
-            if (memoria) {
-                lista.innerHTML = memoria;
-                lista.scrollTop = lista.scrollHeight;
-            }
-        };
+<script>
+    const socket = io();
+    const lista = document.getElementById('mensagens');
+    const formulario = document.getElementById('form');
+    const campoTexto = document.getElementById('input');
 
-        formulario.addEventListener('submit', (e) => {
-            e.preventDefault();
-            if (campoTexto.value) {
-                socket.emit('mensagem', campoTexto.value);
-                campoTexto.value = '';
-            }
-        });
-
-        socket.on('mensagem', (msg) => {
-            const item = document.createElement('li');
-            item.textContent = msg;
-            lista.appendChild(item);
-            
-            // Salva para não sumir no F5
-            localStorage.setItem('historico_chat', lista.innerHTML);
+    // Carrega o histórico do navegador (F5)
+    window.onload = () => {
+        const memoria = localStorage.getItem('historico_chat');
+        if (memoria) {
+            lista.innerHTML = memoria;
             lista.scrollTop = lista.scrollHeight;
-        });
-    </script>
+        }
+    };
+
+    formulario.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (campoTexto.value) {
+            // Enviamos um objeto com a mensagem
+            socket.emit('mensagem', campoTexto.value);
+            campoTexto.value = '';
+        }
+    });
+
+    socket.on('mensagem', (msg) => {
+        const item = document.createElement('li');
+        item.textContent = msg;
+        
+        // Simulação simples: se for você, fica verde na direita. Se for outro, branco na esquerda.
+        // Como não temos login ainda, vamos alternar apenas para o visual ficar bonito.
+        item.className = 'msg-recebida'; 
+        
+        lista.appendChild(item);
+        
+        // Salva para não sumir no F5
+        localStorage.setItem('historico_chat', lista.innerHTML);
+        lista.scrollTop = lista.scrollHeight;
+    });
+</script>
+
 </body>
 </html>
