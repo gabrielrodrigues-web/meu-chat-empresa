@@ -1,43 +1,50 @@
+Feito, Gabriel! Aqui está o código completo para transformar seu chat em um ambiente Dark Neon exclusivo para o T.I.
+
+1. Código para o index.html (O Visual)
+Apague tudo no seu arquivo index.html no GitHub e cole este código:
+
+HTML
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Hello Kitty Neon</title>
+    <title>T.I. Anonymous Chat</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { 
-            font-family: 'Segoe UI', sans-serif; 
-            /* Fundo com várias Hello Kittys */
-            background-image: url('https://i.pinimg.com/originals/82/02/79/82027986872590632943232677610129.jpg'); 
-            background-size: cover;
+            font-family: 'Courier New', Courier, monospace; 
+            background-color: #050505; 
             display: flex; 
             justify-content: center; 
             align-items: center; 
             height: 100vh; 
+            color: #39FF14;
         }
         
         #chat-container { 
-            width: 95%; 
-            max-width: 450px; 
-            height: 85vh; 
-            background: rgba(0, 0, 0, 0.8); /* Fundo escuro para o neon brilhar */
+            width: 100%; 
+            max-width: 500px; 
+            height: 90vh; 
+            background: #000; 
             display: flex; 
             flex-direction: column; 
-            border-radius: 20px; 
-            border: 3px solid #39FF14; /* Borda Verde Neon */
-            box-shadow: 0 0 20px #39FF14; /* Brilho Neon */
-            overflow: hidden; 
+            border: 2px solid #39FF14; 
+            box-shadow: 0 0 15px #39FF14, inset 0 0 5px #39FF14;
+            border-radius: 5px;
         }
         
         #header { 
-            background: #39FF14; 
-            color: black; 
+            background: #000; 
+            color: #39FF14; 
             padding: 15px; 
             text-align: center; 
             font-weight: bold; 
-            text-shadow: 0 0 5px #fff;
+            border-bottom: 2px solid #39FF14;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
         
         #mensagens { 
@@ -46,52 +53,63 @@
             overflow-y: auto; 
             display: flex; 
             flex-direction: column; 
-            gap: 10px; 
+            gap: 12px;
+            background: linear-gradient(rgba(0,0,0,0.9), rgba(0,0,0,0.9)), url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
         }
         
         #mensagens li { 
             list-style: none; 
-            padding: 10px 15px; 
-            border-radius: 15px; 
-            max-width: 80%; 
-            color: white;
-            border: 1px solid #39FF14;
-            background: rgba(57, 255, 20, 0.1);
-            box-shadow: inset 0 0 10px #39FF14;
+            padding: 10px; 
+            border-radius: 4px; 
+            max-width: 85%; 
+            word-wrap: break-word; 
+            border-left: 3px solid #39FF14;
+            background: rgba(57, 255, 20, 0.05);
+            font-size: 0.9rem;
         }
 
-        #form { display: flex; padding: 15px; background: rgba(0,0,0,0.9); gap: 10px; }
+        #form { 
+            display: flex; 
+            padding: 15px; 
+            background: #000; 
+            gap: 10px; 
+            border-top: 1px solid #39FF14;
+        }
         
         #input { 
             flex: 1; 
             padding: 12px; 
-            border: 2px solid #39FF14; 
-            border-radius: 25px; 
-            background: #000; 
+            border: 1px solid #39FF14; 
+            background: #050505; 
             color: #39FF14; 
-            outline: none;
-            box-shadow: 0 0 5px #39FF14;
+            outline: none; 
+            border-radius: 0;
         }
         
         button { 
             background: #39FF14; 
-            color: black; 
+            color: #000; 
             border: none; 
             padding: 10px 20px; 
-            border-radius: 25px; 
             cursor: pointer; 
-            font-weight: bold; 
-            box-shadow: 0 0 10px #39FF14;
+            font-weight: bold;
+            text-transform: uppercase;
         }
+        
+        button:hover { background: #fff; box-shadow: 0 0 10px #39FF14; }
+
+        /* Scrollbar Neon */
+        #mensagens::-webkit-scrollbar { width: 5px; }
+        #mensagens::-webkit-scrollbar-thumb { background: #39FF14; }
     </style>
 </head>
 <body>
 
 <div id="chat-container">
-    <div id="header">HELLO KITTY NEON CHAT</div>
+    <div id="header">Chat Anônimo para Funcionários do T.I.</div>
     <ul id="mensagens"></ul>
     <form id="form">
-        <input id="input" autocomplete="off" placeholder="Escreva algo neon...">
+        <input id="input" autocomplete="off" placeholder="root@ti-chat:~# ">
         <button type="submit">Enviar</button>
     </form>
 </div>
@@ -103,7 +121,7 @@
     const campoTexto = document.getElementById('input');
 
     window.onload = () => {
-        const memoria = localStorage.getItem('historico_chat');
+        const memoria = localStorage.getItem('ti_chat_log');
         if (memoria) {
             lista.innerHTML = memoria;
             lista.scrollTop = lista.scrollHeight;
@@ -120,9 +138,9 @@
 
     socket.on('mensagem', (msg) => {
         const item = document.createElement('li');
-        item.textContent = msg;
+        item.textContent = '> ' + msg;
         lista.appendChild(item);
-        localStorage.setItem('historico_chat', lista.innerHTML);
+        localStorage.setItem('ti_chat_log', lista.innerHTML);
         lista.scrollTop = lista.scrollHeight;
     });
 </script>
