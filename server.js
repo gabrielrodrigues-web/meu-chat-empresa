@@ -8,6 +8,7 @@ app.get('/', (req, res) => {
 });
 
 io.on('connection', (socket) => {
+  console.log('User connected to secure TI line');
   socket.on('mensagem', (msg) => {
     io.emit('mensagem', msg);
   });
@@ -15,5 +16,5 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 10000;
 http.listen(PORT, () => {
-  console.log('CHAT ONLINE NA PORTA ' + PORT);
+  console.log('SECURITY PROTOCOL ACTIVE ON PORT ' + PORT);
 });
