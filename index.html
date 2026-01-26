@@ -31,6 +31,7 @@
             font-size: 50px;
             filter: drop-shadow(0 0 15px #ff0000);
             animation: float 4s ease-in-out infinite;
+            cursor: default;
         }
 
         @keyframes float {
@@ -53,6 +54,7 @@
             letter-spacing: 5px;
             font-weight: bold;
             text-shadow: 0 0 10px #ff0000;
+            text-transform: uppercase;
         }
 
         #messages {
@@ -62,8 +64,6 @@
             display: flex;
             flex-direction: column;
             gap: 15px;
-            background-image: linear-gradient(rgba(255, 0, 0, 0.02) 1px, transparent 1px);
-            background-size: 100% 3px;
         }
 
         .message {
@@ -71,7 +71,8 @@
             border-left: 3px solid #ff0000;
             background: rgba(20, 0, 0, 0.5);
             font-size: 14px;
-            animation: fadeIn 0.5s;
+            animation: fadeIn 0.3s;
+            word-wrap: break-word;
         }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -100,15 +101,17 @@
             padding: 0 25px;
             cursor: pointer;
             font-weight: bold;
-            transition: 0.3s;
+            text-transform: uppercase;
         }
 
         button:hover { background: #ff0000; }
 
+        /* Scrollbar */
         #messages::-webkit-scrollbar { width: 5px; }
-        #messages::-webkit-scrollbar-thumb { background: #330000; }
+        #messages::-webkit-scrollbar-track { background: #000; }
+        #messages::-webkit-scrollbar-thumb { background: #440000; }
     </style>
- head>
+</head>
 <body>
 
     <div id="left-panel">
@@ -116,55 +119,49 @@
     </div>
 
     <div id="chat-panel">
-        <header>/> CHAT ANÔNIMO - GSO</header>
+        <header>Chat Anônimo - GSO</header>
         <div id="messages"></div>
         <form id="input-area">
             <input id="m" autocomplete="off" placeholder="[ escreva sua transmissão... ]" />
-            <button>ENVIAR</button>
+            <button type="submit">ENVIAR</button>
         </form>
     </div>
 
     <script>
         const socket = io();
         
-        // Lista de cores de balões para cada usuário
-        const balloons = ['🎈', '🎈', '🎈', '🎈', '🎈']; 
-        const balloonColors = ['#ff0000', '#ff00ff', '#ff8800', '#ffff00', '#00ffff'];
-        const randomIndex = Math.floor(Math.random() * balloonColors.length);
-        
-        // Cada usuário terá UM balão de uma cor específica
-        const myBalloon = balloons[0]; 
-        const myColor = balloonColors[randomIndex];
-        const userNumber = Math.floor(Math.random() * 999);
+        // Cores de balões para os usuários
+        const balloonColors = ['#ff0000', '#00ff00', '#0077ff', '#ffff00', '#ff00ff', '#00ffff', '#ffa500'];
+        const myColor = balloonColors[Math.floor(Math.random() * balloonColors.length)];
+        const userNumber = Math.floor(Math.random() * 999) + 1;
 
         const form = document.getElementById('input-area');
         const input = document.getElementById('m');
         const messages = document.getElementById('messages');
 
-        form.onsubmit = function(e) {
+        form.addEventListener('submit', function(e) {
             e.preventDefault();
-            if (input.value) {
+            if (input.value.trim()) {
                 socket.emit('chat message', {
                     user: "Usuário " + userNumber,
                     text: input.value,
-                    balloon: myBalloon,
                     color: myColor
                 });
                 input.value = '';
             }
-            return false;
-        };
+        });
 
         socket.on('chat message', function(msg) {
             const item = document.createElement('div');
             item.className = 'message';
-            // Exibe o balão colorido do usuário
-            item.innerHTML = `<span style="color: ${msg.color}; filter: drop-shadow(0 0 5px ${msg.color})">${msg.balloon}</span> <strong>${msg.user}:</strong> ${msg.text}`;
+            // Cada usuário aparece com UM balão da sua cor sorteada
+            item.innerHTML = `<span style="color: ${msg.color}; filter: drop-shadow(0 0 3px ${msg.color})">🎈</span> <strong>${msg.user}:</strong> ${msg.text}`;
             messages.appendChild(item);
             messages.scrollTop = messages.scrollHeight;
         });
     </script>
 </body>
 </html>
+
 
 
