@@ -2,27 +2,28 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Minecraft Pro Chat: Meow Edition</title>
+    <title>Minecraft Pro Chat: Final Meow Edition</title>
     <style>
         @import url('https://fonts.cdnfonts.com/css/minecraftia');
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
 
         * { box-sizing: border-box; }
-        body { margin: 0; display: flex; height: 100vh; overflow: hidden; transition: 0.5s; }
+        body { margin: 0; display: flex; height: 100vh; overflow: hidden; transition: 0.5s; background: #000; }
         
         #sidebar { width: 30%; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; z-index: 10; transition: inherit; }
         
+        /* Ícones com Neon */
         #toggle-btn { font-size: 130px; cursor: pointer; transition: 0.3s; user-select: none; z-index: 11; image-rendering: pixelated; }
         .theme-amigavel #toggle-btn { filter: drop-shadow(0 0 15px #ff4d7d); }
         .theme-nao-amigavel #toggle-btn { filter: drop-shadow(0 0 20px #ff0000); }
 
-        /* Placar com Animação de Pulo */
-        #score-board { margin-top: 20px; font-size: 20px; font-weight: bold; z-index: 11; padding: 10px 20px; border-radius: 8px; text-transform: uppercase; transition: 0.1s; }
-        .theme-amigavel #score-board { color: #ff4d7d; border: 3px solid #ffcada; background: #fff; }
-        .theme-nao-amigavel #score-board { color: #ff0000; border: 2px solid #ff0000; background: #000; box-shadow: 0 0 10px #ff0000; }
-        
+        /* Placar Pixelado */
+        #score-board { margin-top: 20px; font-size: 20px; font-weight: bold; z-index: 11; padding: 10px 20px; border-radius: 8px; text-transform: uppercase; transition: 0.1s; border: 3px solid; }
+        .theme-amigavel #score-board { color: #ff4d7d; border-color: #ffcada; background: #fff; }
+        .theme-nao-amigavel #score-board { color: #ff0000; border-color: #ff0000; background: #000; box-shadow: 0 0 10px #ff0000; }
         .bump { transform: scale(1.2); }
 
+        /* Chat */
         #chat-container { width: 70%; display: flex; flex-direction: column; position: relative; transition: inherit; }
         #header { padding: 30px; text-align: center; font-size: 24px; font-weight: bold; transition: inherit; z-index: 5; border-bottom: 4px solid rgba(0,0,0,0.05); }
         #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; z-index: 5; }
@@ -32,27 +33,28 @@
         .message img { max-width: 100%; border-radius: 8px; margin-top: 5px; }
         .my-message { align-self: flex-end; }
 
+        /* Partículas */
         .bg-particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; overflow: hidden; }
         .particle { position: absolute; bottom: -80px; cursor: pointer; z-index: 20; pointer-events: auto; image-rendering: pixelated; user-select: none; }
         @keyframes moveUp { 0% { transform: translateY(0) rotate(0deg); opacity: 0.7; } 100% { transform: translateY(-115vh) rotate(360deg); opacity: 0; } }
 
-        /* TEMAS */
+        /* Estilos dos Temas */
         .theme-amigavel { background-color: #fff; font-family: 'Minecraftia', sans-serif; }
         .theme-amigavel #sidebar { background: #fff; border-right: 4px solid #ffeef2; }
         .theme-amigavel #header { color: #ff4d7d; }
         .theme-amigavel .message { background: #fff; border: 3px solid #ffcada; color: #555; }
         .theme-amigavel .my-message { background: #ff85a2; color: white; border-color: #ff4d7d; }
 
-        .theme-nao-amigavel { background-color: #000; font-family: 'Share Tech Mono', monospace; }
-        .theme-nao-amigavel #sidebar { border-right: 2px solid #ff0000; }
+        .theme-nao-amigavel { background-color: #050000; font-family: 'Share Tech Mono', monospace; }
+        .theme-nao-amigavel #sidebar { border-right: 2px solid #ff0000; background: #000; }
         .theme-nao-amigavel #header { color: #ff0000; text-shadow: 0 0 10px #ff0000; }
         .theme-nao-amigavel .message { background: #000; border: 1px solid #ff0000; color: #ff4444; }
         .theme-nao-amigavel .my-message { color: white; border-color: #ff0000; box-shadow: 0 0 15px #ff0000; }
 
+        /* Inputs */
         #input-area { padding: 20px; display: flex; gap: 10px; z-index: 10; }
         input[type="text"] { flex: 1; padding: 12px; border-radius: 8px; border: 2px solid #ddd; font-family: inherit; }
         .theme-nao-amigavel input[type="text"] { background: #000; border-color: #ff0000; color: #ff0000; }
-        
         label, button { cursor: pointer; padding: 10px 15px; border-radius: 8px; border: none; font-family: inherit; font-weight: bold; }
         .theme-amigavel button, .theme-amigavel label { background: #ff4d7d; color: white; }
         .theme-nao-amigavel button, .theme-nao-amigavel label { background: #000; border: 1px solid #ff0000; color: #ff0000; }
@@ -60,14 +62,16 @@
     </style>
 </head>
 <body class="theme-amigavel">
-    <audio id="audio-meow" src="https://assets.mixkit.co/active_storage/sfx/2569/2569-preview.mp3"></audio>
-    <audio id="audio-hiss" src="https://assets.mixkit.co/active_storage/sfx/2572/2572-preview.mp3"></audio>
+
+    <audio id="audio-meow" src="https://actions.google.com/sounds/v1/animals/cat_purr_meow.ogg"></audio>
+    <audio id="audio-hiss" src="https://actions.google.com/sounds/v1/horror/ambient_hum_short.ogg"></audio>
 
     <div id="sidebar">
         <div class="bg-particles" id="sidebar-particles"></div>
         <div id="toggle-btn">❤️</div>
         <div id="score-board">Corações: 0</div>
     </div>
+
     <div id="chat-container">
         <div class="bg-particles" id="chat-particles"></div>
         <div id="header">Modo Amigável</div>
@@ -75,7 +79,7 @@
         <div id="input-area">
             <label for="img-input">📷</label><input type="file" id="img-input" accept="image/*">
             <label for="audio-input">🎙️</label><input type="file" id="audio-input" accept="audio/*">
-            <input type="text" id="msg-input" placeholder="Digite...">
+            <input type="text" id="msg-input" placeholder="Digite uma mensagem...">
             <button id="send-btn">ENVIAR</button>
         </div>
     </div>
@@ -85,7 +89,7 @@
         const socket = io();
         let currentRoom = 'amigavel';
         const user = "User_" + Math.floor(Math.random() * 99);
-        const LIFE_TIME = 5 * 60 * 1000;
+        const LIFE_TIME = 5 * 60 * 1000; // 5 Minutos
         let particleInterval;
 
         let scores = JSON.parse(localStorage.getItem('chat_scores') || '{"amigavel": 0, "infernal": 0}');
@@ -93,11 +97,8 @@
         function updateScoreDisplay() {
             const board = document.getElementById('score-board');
             board.innerText = currentRoom === 'amigavel' ? `Corações: ${scores.amigavel}` : `Almas: ${scores.infernal}`;
-            
-            // Efeito de pulo no placar
             board.classList.add('bump');
             setTimeout(() => board.classList.remove('bump'), 100);
-            
             localStorage.setItem('chat_scores', JSON.stringify(scores));
         }
 
@@ -113,14 +114,12 @@
             p.onclick = function() {
                 if (currentRoom === 'amigavel') {
                     scores.amigavel++;
-                    const sound = document.getElementById('audio-meow');
-                    sound.currentTime = 0;
-                    sound.play().catch(() => {});
+                    const s = document.getElementById('audio-meow');
+                    s.pause(); s.currentTime = 0; s.play().catch(()=>{});
                 } else {
                     scores.infernal++;
-                    const sound = document.getElementById('audio-hiss');
-                    sound.currentTime = 0;
-                    sound.play().catch(() => {});
+                    const s = document.getElementById('audio-hiss');
+                    s.pause(); s.currentTime = 0; s.play().catch(()=>{});
                 }
                 
                 updateScoreDisplay();
@@ -168,8 +167,9 @@
                 if (msg.fileType === 'audio') content += `<audio controls src="${msg.file}"></audio>`;
             }
             div.innerHTML = content;
-            document.getElementById('messages').appendChild(div);
-            document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+            const msgDiv = document.getElementById('messages');
+            msgDiv.appendChild(div);
+            msgDiv.scrollTop = msgDiv.scrollHeight;
         }
 
         function sendMessage() {
@@ -179,6 +179,7 @@
                 input.value = '';
             }
         }
+
         document.getElementById('msg-input').onkeypress = (e) => { if(e.key === 'Enter') sendMessage(); };
         document.getElementById('send-btn').onclick = sendMessage;
 
@@ -218,7 +219,8 @@
         document.getElementById('img-input').onchange = function() { sendFile(this, 'image'); };
         document.getElementById('audio-input').onchange = function() { sendFile(this, 'audio'); };
 
-        setInterval(renderChat, 15000);
+        // Inicialização
+        setInterval(renderChat, 15000); // Auto-limpeza do chat
         updateScoreDisplay();
         renderChat();
         startParticleEffects('❤️');
