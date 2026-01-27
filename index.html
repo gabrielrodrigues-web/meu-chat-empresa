@@ -3,126 +3,213 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BIPOLAR - ELITE</title>
+    <title>BIPOLAR - ELITE SYSTEM</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        :root { --main: #ff0055; --bg: #000; }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        
+        :root { --main: #00ff44; --bg: #000; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', Courier, monospace; }
         body { background: var(--bg); height: 100vh; overflow: hidden; color: white; transition: 0.5s; }
 
         /* TELA DE LOGIN */
-        #login-screen { position: fixed; inset: 0; background: #000; z-index: 1000; display: flex; align-items: center; justify-content: center; }
-        .login-box { border: 2px solid var(--main); padding: 40px; border-radius: 25px; text-align: center; background: #0a0a0a; width: 350px; box-shadow: 0 0 30px var(--main); }
-        input { width: 100%; padding: 15px; margin: 15px 0; background: #151515; border: 1px solid #333; color: #fff; border-radius: 12px; outline: none; }
-        input:focus { border-color: var(--main); }
+        #login-screen { position: fixed; inset: 0; background: #000; z-index: 2000; display: flex; align-items: center; justify-content: center; }
+        .login-box { border: 3px solid var(--main); padding: 40px; border-radius: 10px; text-align: center; background: #050505; width: 350px; box-shadow: 0 0 20px var(--main); }
+        input[type="text"] { width: 100%; padding: 15px; margin: 15px 0; background: #111; border: 1px solid var(--main); color: #fff; outline: none; }
         
         /* APP PRINCIPAL */
-        #main-app { display: none; height: 100vh; width: 100%; }
+        #main-app { display: none; height: 100vh; width: 100%; position: relative; }
 
-        /* ÁREA DO CONTEÚDO (ESQUERDA) */
-        .stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
-        .nav-bar { position: absolute; top: 30px; display: flex; gap: 15px; }
-        .nav-btn { padding: 12px 25px; border-radius: 30px; border: 2px solid var(--main); cursor: pointer; font-weight: bold; background: transparent; color: #fff; transition: 0.3s; }
-        .nav-btn.active { background: var(--main); box-shadow: 0 0 20px var(--main); }
+        /* CANVAS DE PARTÍCULAS (Minecraft Style) */
+        #canvas-particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: auto; z-index: 1; }
 
-        #big-icon { font-size: 180px; cursor: pointer; user-select: none; filter: drop-shadow(0 0 20px var(--main)); transition: 0.2s; }
-        #big-icon:active { transform: scale(0.9); }
-        #score { font-size: 60px; margin-top: 20px; font-weight: bold; color: var(--main); text-shadow: 0 0 10px var(--main); }
+        /* ÁREA CENTRAL */
+        .stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 5; pointer-events: none; }
+        .nav-bar { position: absolute; top: 20px; display: flex; gap: 10px; pointer-events: auto; }
+        .nav-btn { padding: 10px 20px; border: 2px solid var(--main); cursor: pointer; background: #000; color: #fff; font-weight: bold; }
+        .nav-btn.active { background: var(--main); color: #000; box-shadow: 0 0 15px var(--main); }
 
-        /* CHAT LATERAL (DIREITA) */
+        #big-icon { font-size: 150px; user-select: none; filter: drop-shadow(0 0 10px var(--main)); transition: 0.2s; image-rendering: pixelated; }
+        #score { font-size: 50px; font-weight: bold; color: var(--main); margin-top: 10px; }
+
+        /* CHAT LATERAL */
         .chat-sidebar { 
-            width: 380px; background: rgba(10, 10, 10, 0.95); border-left: 2px solid var(--main); 
-            display: flex; flex-direction: column; backdrop-filter: blur(15px);
+            width: 400px; background: rgba(0, 0, 0, 0.9); border-left: 2px solid var(--main); 
+            display: flex; flex-direction: column; z-index: 10; position: relative;
         }
-        .chat-header { padding: 20px; text-align: center; border-bottom: 1px solid #222; font-weight: bold; letter-spacing: 2px; }
-        #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
-        .msg { background: #1a1a1a; padding: 12px; border-radius: 15px; border-left: 4px solid var(--main); font-size: 14px; }
+        #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .msg { background: #0a0a0a; padding: 10px; border: 1px solid #333; font-size: 13px; border-left: 3px solid var(--main); overflow-wrap: break-word; }
+        .msg img { max-width: 100%; border-radius: 5px; margin-top: 5px; border: 1px solid var(--main); }
         
-        .input-area { padding: 20px; background: #0a0a0a; display: flex; gap: 10px; }
-        .send-btn { background: var(--main); color: #fff; border: none; padding: 0 20px; border-radius: 12px; cursor: pointer; font-weight: bold; }
+        .input-area { padding: 15px; background: #050505; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #222; }
+        .controls { display: flex; gap: 5px; }
+        .controls button, .controls label { flex: 1; padding: 8px; font-size: 10px; background: #111; color: var(--main); border: 1px solid var(--main); cursor: pointer; text-align: center; }
+        #msg-in { padding: 10px; background: #111; border: 1px solid #333; color: #fff; outline: none; width: 100%; }
     </style>
 </head>
 <body>
     <div id="login-screen">
         <div class="login-box">
-            <h1 style="color:var(--main); margin-bottom:20px; letter-spacing:5px">BIPOLAR</h1>
-            <input type="text" id="nick" placeholder="Digite seu codinome...">
-            <button onclick="entrar()" style="width:100%; padding:15px; background:var(--main); color:#fff; border:none; border-radius:12px; cursor:pointer; font-weight:bold; margin-top:10px">ACESSAR SISTEMA</button>
+            <h1 id="brand" style="color:var(--main); margin-bottom:20px;">BIPOLAR</h1>
+            <input type="text" id="nick" placeholder="NOME DE GUERRA...">
+            <button onclick="entrar()" style="width:100%; padding:15px; background:var(--main); color:#000; border:none; font-weight:bold; cursor:pointer;">ENTRAR NO SISTEMA</button>
         </div>
     </div>
 
     <div id="main-app">
-        <div class="stage">
-            <div class="nav-bar">
-                <button id="btn-esp" class="nav-btn active" onclick="mudar('esp')">MODO ESPERANÇA 💖</button>
-                <button id="btn-lad" class="nav-btn" onclick="mudar('lad')">LADRÃO DE ALMAS 💀</button>
+        <canvas id="canvas-particles"></canvas>
+        <div style="display:flex; width:100%; height:100%;">
+            <div class="stage">
+                <div class="nav-bar">
+                    <button id="btn-sky" class="nav-btn active" onclick="mudar('sky')">MODO CÉU 💖</button>
+                    <button id="btn-hell" class="nav-btn" onclick="mudar('hell')">MODO INFERNAL 💀</button>
+                </div>
+                <div id="big-icon">💖</div>
+                <div id="score">0</div>
             </div>
-            <div id="big-icon" onclick="ponto()">💖</div>
-            <div id="score">0</div>
-        </div>
 
-        <div class="chat-sidebar">
-            <div class="chat-header">COMUNICAÇÃO ELITE</div>
-            <div id="messages"></div>
-            <div class="input-area">
-                <input type="text" id="msg-in" placeholder="Mensagem..." onkeypress="if(event.key==='Enter') enviar()">
-                <button class="send-btn" onclick="enviar()">SEND</button>
+            <div class="chat-sidebar">
+                <div style="padding:15px; text-align:center; border-bottom:1px solid #222; font-size:12px;">AUTODESTRUIÇÃO: 7 MINUTOS</div>
+                <div id="messages"></div>
+                <div class="input-area">
+                    <input type="text" id="msg-in" placeholder="Escreva aqui..." onkeypress="if(event.key==='Enter') enviar()">
+                    <div class="controls">
+                        <button onclick="enviar()">ENVIAR</button>
+                        <label for="img-up">FOTO</label>
+                        <input type="file" id="img-up" accept="image/*" style="display:none" onchange="enviarImagem(this)">
+                        <button id="rec-btn" onmousedown="iniciarAudio()" onmouseup="pararAudio()">🎤 SEGURE</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
         const socket = io();
-        let user = "";
-        let sala = "esperanca";
+        let user = "", sala = "sky", pontos = 0;
+        const canvas = document.getElementById('canvas-particles');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let mediaRecorder;
+        let audioChunks = [];
 
         function entrar() {
-            const input = document.getElementById('nick');
-            user = input.value;
-            if(!user) {
-                alert("Digite seu codinome!");
-                return;
-            }
+            user = document.getElementById('nick').value;
+            if(!user) return alert("Identifique-se!");
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-app').style.display = 'flex';
+            resize();
+            animate();
             socket.emit('join room', sala);
         }
 
         function mudar(m) {
-            sala = m === 'esp' ? 'esperanca' : 'ladrao';
+            sala = m;
             const root = document.documentElement;
-            if(m === 'esp') {
-                root.style.setProperty('--main', '#ff0055');
+            if(m === 'sky') {
+                root.style.setProperty('--main', '#00e1ff');
                 document.getElementById('big-icon').innerText = '💖';
-                document.body.style.background = "#000"; 
+                document.body.style.background = "#000510";
             } else {
-                root.style.setProperty('--main', '#ff0000');
+                root.style.setProperty('--main', '#ff3300');
                 document.getElementById('big-icon').innerText = '💀';
-                document.body.style.background = "#1a0000";
+                document.body.style.background = "#100000";
             }
-            document.getElementById('btn-esp').classList.toggle('active', m === 'esp');
-            document.getElementById('btn-lad').classList.toggle('active', m === 'lad');
-            document.getElementById('messages').innerHTML = "";
+            document.getElementById('btn-sky').classList.toggle('active', m === 'sky');
+            document.getElementById('btn-hell').classList.toggle('active', m === 'hell');
+            particles = [];
             socket.emit('join room', sala);
         }
 
+        // --- SISTEMA DE PARTÍCULAS ---
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.onresize = resize;
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * (canvas.width - 400); // Evita o chat
+                this.y = canvas.height + 50;
+                this.size = 40;
+                this.speed = Math.random() * 2 + 1;
+                this.icon = sala === 'sky' ? '💖' : '💀';
+            }
+            update() { this.y -= this.speed; }
+            draw() {
+                ctx.font = this.size + "px Arial";
+                ctx.fillText(this.icon, this.x, this.y);
+            }
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            particles.forEach((p, i) => {
+                if(e.clientX > p.x && e.clientX < p.x + 40 && e.clientY > p.y - 40 && e.clientY < p.y) {
+                    particles.splice(i, 1);
+                    pontos++;
+                    document.getElementById('score').innerText = pontos;
+                }
+            });
+        });
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if(Math.random() < 0.05) particles.push(new Particle());
+            particles.forEach((p, i) => {
+                p.update();
+                p.draw();
+                if(p.y < -50) particles.splice(i, 1);
+            });
+            requestAnimationFrame(animate);
+        }
+
+        // --- COMUNICAÇÃO ---
         function enviar() {
             const i = document.getElementById('msg-in');
             if(!i.value) return;
-            socket.emit('chat message', { room: sala, user: user, text: i.value });
+            socket.emit('chat message', { room: sala, user: user, text: i.value, type: 'text' });
             i.value = "";
+        }
+
+        function enviarImagem(input) {
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                socket.emit('chat message', { room: sala, user: user, img: e.target.result, type: 'img' });
+            };
+            reader.readAsDataURL(file);
         }
 
         socket.on('chat message', (data) => {
             const m = document.getElementById('messages');
-            m.innerHTML += `<div class="msg"><b style="color:var(--main)">${data.user}:</b><br>${data.text}</div>`;
+            const id = "msg-" + Date.now();
+            let content = data.type === 'img' ? `<img src="${data.img}">` : data.text;
+            if(data.type === 'audio') content = `<audio controls src="${data.audio}"></audio>`;
+
+            m.innerHTML += `<div class="msg" id="${id}"><b style="color:var(--main)">${data.user}:</b><br>${content}</div>`;
             m.scrollTop = m.scrollHeight;
+
+            // Timer de 7 minutos (420000ms)
+            setTimeout(() => {
+                const el = document.getElementById(id);
+                if(el) el.remove();
+            }, 420000);
         });
 
-        function ponto() {
-            let s = document.getElementById('score');
-            s.innerText = parseInt(s.innerText) + 1;
+        // --- ÁUDIO ---
+        async function iniciarAudio() {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(audioChunks, { type: 'audio/ogg; codecs=opus' });
+                const reader = new FileReader();
+                reader.onload = e => socket.emit('chat message', { room: sala, user: user, audio: e.target.result, type: 'audio' });
+                reader.readAsDataURL(blob);
+                audioChunks = [];
+            };
+            mediaRecorder.start();
+            document.getElementById('rec-btn').style.background = "red";
+        }
+        function pararAudio() {
+            mediaRecorder.stop();
+            document.getElementById('rec-btn').style.background = "#111";
         }
     </script>
 </body>
