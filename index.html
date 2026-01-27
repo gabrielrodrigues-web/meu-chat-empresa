@@ -18,7 +18,7 @@
         input:focus { border-color: var(--main); }
         
         /* APP PRINCIPAL */
-        #main-app { display: none; height: 100vh; display: flex; }
+        #main-app { display: none; height: 100vh; width: 100%; }
 
         /* ÁREA DO CONTEÚDO (ESQUERDA) */
         .stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
@@ -37,8 +37,7 @@
         }
         .chat-header { padding: 20px; text-align: center; border-bottom: 1px solid #222; font-weight: bold; letter-spacing: 2px; }
         #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
-        .msg { background: #1a1a1a; padding: 12px; border-radius: 15px; border-left: 4px solid var(--main); font-size: 14px; animation: slide In 0.3s ease; }
-        @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+        .msg { background: #1a1a1a; padding: 12px; border-radius: 15px; border-left: 4px solid var(--main); font-size: 14px; }
         
         .input-area { padding: 20px; background: #0a0a0a; display: flex; gap: 10px; }
         .send-btn { background: var(--main); color: #fff; border: none; padding: 0 20px; border-radius: 12px; cursor: pointer; font-weight: bold; }
@@ -47,14 +46,13 @@
 <body>
     <div id="login-screen">
         <div class="login-box">
-            <h1 style="color:var(--main); margin-bottom:10px; letter-spacing:5px">BIPOLAR</h1>
-            <p style="color:#666; font-size:12px">ELITE COMMUNICATION SYSTEM</p>
+            <h1 style="color:var(--main); margin-bottom:20px; letter-spacing:5px">BIPOLAR</h1>
             <input type="text" id="nick" placeholder="Digite seu codinome...">
             <button onclick="entrar()" style="width:100%; padding:15px; background:var(--main); color:#fff; border:none; border-radius:12px; cursor:pointer; font-weight:bold; margin-top:10px">ACESSAR SISTEMA</button>
         </div>
     </div>
 
-    <div id="main-app" style="display: none;">
+    <div id="main-app">
         <div class="stage">
             <div class="nav-bar">
                 <button id="btn-esp" class="nav-btn active" onclick="mudar('esp')">MODO ESPERANÇA 💖</button>
@@ -65,10 +63,10 @@
         </div>
 
         <div class="chat-sidebar">
-            <div class="chat-header" id="chat-title">COMUNICAÇÃO CRIPTOGRAFADA</div>
+            <div class="chat-header">COMUNICAÇÃO ELITE</div>
             <div id="messages"></div>
             <div class="input-area">
-                <input type="text" id="msg-in" placeholder="Escreva uma mensagem..." onkeypress="if(event.key==='Enter') enviar()">
+                <input type="text" id="msg-in" placeholder="Mensagem..." onkeypress="if(event.key==='Enter') enviar()">
                 <button class="send-btn" onclick="enviar()">SEND</button>
             </div>
         </div>
@@ -80,8 +78,12 @@
         let sala = "esperanca";
 
         function entrar() {
-            user = document.getElementById('nick').value;
-            if(!user) return alert("Digite um nome!");
+            const input = document.getElementById('nick');
+            user = input.value;
+            if(!user) {
+                alert("Digite seu codinome!");
+                return;
+            }
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-app').style.display = 'flex';
             socket.emit('join room', sala);
