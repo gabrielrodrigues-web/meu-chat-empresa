@@ -17,12 +17,12 @@ io.on('connection', (socket) => {
     console.log('Alguém entrou no chat!');
 
     socket.on('chat message', (msg) => {
-        // Apenas repassa a mensagem para todos, sem lógica de IA
+        // Apenas repassa a mensagem recebida para todos os conectados
         io.emit('chat message', msg);
     });
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 http.listen(PORT, () => {
     console.log('CHAT ONLINE: Servidor rodando na porta ' + PORT);
 });
