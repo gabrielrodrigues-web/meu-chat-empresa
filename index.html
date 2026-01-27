@@ -4,16 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BIPOLAR - ELITE EDITION</title>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-storage-compat.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <style>
         :root { --cor-main: #ff0055; --bg-dinamico: radial-gradient(circle, #fff 0%, #ffcbd5 100%); }
         * { box-sizing: border-box; cursor: crosshair; transition: all 0.3s ease; }
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; background: #000; }
 
-        /* EFEITO DE TREMIDA AO MUDAR CANAL */
         @keyframes shake {
             0% { transform: translate(1px, 1px) rotate(0deg); }
             20% { transform: translate(-3px, 0px) rotate(-1deg); }
@@ -23,24 +19,20 @@
         }
         .shake-effect { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
 
-        /* TELA DE LOGIN */
         #login-screen { position: fixed; inset: 0; background: #000; z-index: 2000; display: flex; align-items: center; justify-content: center; }
         .login-box { border: 2px solid var(--cor-main); padding: 50px; border-radius: 30px; text-align: center; background: #050505; box-shadow: 0 0 60px var(--cor-main); width: 400px; }
         .login-box h1 { color: #fff; text-shadow: 0 0 20px var(--cor-main); letter-spacing: 8px; margin-bottom: 30px; }
         input { width: 100%; padding: 18px; margin: 10px 0; background: #000; border: 1px solid var(--cor-main); color: #fff; border-radius: 15px; font-size: 16px; }
 
-        /* ESTRUTURA PRINCIPAL */
         #main-app { display: none; height: 100vh; background: var(--bg-dinamico); position: relative; }
         
-        /* PALCO CENTRAL (ICONE E SCORE) */
         .stage { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
-        #big-icon { font-size: 240px; filter: drop-shadow(0 0 40px var(--cor-main)); user-select: none; pointer-events: auto; transform: scale(1); }
+        #big-icon { font-size: 240px; filter: drop-shadow(0 0 40px var(--cor-main)); user-select: none; pointer-events: auto; transform: scale(1); cursor: pointer; }
         #big-icon:hover { transform: scale(1.1); }
         #big-icon:active { transform: scale(0.9); }
         
         .score-display { font-size: 110px; font-weight: 900; color: var(--cor-main); text-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-top: -30px; z-index: 10; }
 
-        /* CHAT GIGANTE E MODERNO */
         .chat-container {
             position: absolute; right: 30px; top: 30px; bottom: 30px; width: 480px;
             background: rgba(0, 0, 0, 0.88); border: 3px solid var(--cor-main); border-radius: 35px;
@@ -57,20 +49,15 @@
         .msg-user { font-weight: bold; font-size: 14px; color: var(--cor-main); text-transform: uppercase; margin-bottom: 5px; display: block; }
         .msg-text { color: #fff; font-size: 17px; line-height: 1.5; word-wrap: break-word; }
 
-        /* CONTROLES DE NAVEGAÇÃO */
         .nav-bar { position: fixed; top: 35px; left: 40px; display: flex; gap: 20px; z-index: 500; }
-        .nav-btn { padding: 15px 40px; border-radius: 50px; border: 2px solid var(--cor-main); background: #000; color: var(--cor-main); font-weight: bold; font-size: 14px; letter-spacing: 2px; }
+        .nav-btn { padding: 15px 40px; border-radius: 50px; border: 2px solid var(--cor-main); background: #000; color: var(--cor-main); font-weight: bold; font-size: 14px; letter-spacing: 2px; cursor: pointer; }
         .nav-btn.active { background: var(--cor-main); color: #fff; box-shadow: 0 0 30px var(--cor-main); }
 
-        /* AREA DE INPUT */
         .input-area { padding: 25px; background: rgba(0,0,0,0.4); border-radius: 0 0 35px 35px; display: flex; gap: 12px; }
         .input-area input { margin: 0; background: rgba(255,255,255,0.08); border: none; }
-        .send-btn { background: var(--cor-main); border: none; color: #fff; padding: 0 30px; border-radius: 15px; font-weight: bold; }
+        .send-btn { background: var(--cor-main); border: none; color: #fff; padding: 0 30px; border-radius: 15px; font-weight: bold; cursor: pointer; }
 
-        /* PARTÍCULAS (ALMAS/CORAÇÕES) */
-        .particle { position: absolute; font-size: 55px; z-index: 5; opacity: 0.8; filter: drop-shadow(0 0 15px var(--cor-main)); user-select: none; }
-
-        .hidden { display: none !important; }
+        .particle { position: absolute; font-size: 55px; z-index: 5; opacity: 0.8; filter: drop-shadow(0 0 15px var(--cor-main)); user-select: none; pointer-events: auto; }
     </style>
 </head>
 <body id="body-context">
@@ -98,57 +85,46 @@
         <div class="chat-container">
             <div id="messages-list"></div>
             <div class="input-area">
-                <input type="text" id="chat-input" placeholder="Envie uma mensagem (dura 8 min)...">
+                <input type="text" id="chat-input" placeholder="Envie uma mensagem...">
                 <button class="send-btn" onclick="enviarMensagem()">SEND</button>
             </div>
         </div>
     </div>
 
     <script>
-        // CONFIGURAÇÃO FIREBASE (CONFORME SEU PRINT)
-        const firebaseConfig = {
-            apiKey: "AIzaSyD7GIQgMVr0lf4BOyQkXBh_Qhk-GK6wMK4",
-            authDomain: "chat2000-5815b.firebaseapp.com",
-            databaseURL: "https://chat2000-5815b-default-rtdb.firebaseio.com",
-            projectId: "chat2000-5815b",
-            storageBucket: "chat2000-5815b.appspot.com",
-            messagingSenderId: "88820669466",
-            appId: "1:88820669466:web:df968acfebc5bd31ec85a3"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.database();
+        // Inicializa conexão com seu server.js
+        const socket = io(); 
 
+        let userLogado = "";
         let canalAtual = 'esperanca';
         let placar = { esp: 0, lad: 0 };
-        const TEMPO_LIMITE = 8 * 60 * 1000; // 8 MINUTOS EM MS
+        const TEMPO_MENSAGEM = 8 * 60 * 1000;
 
         function fazerLogin() {
             const u = document.getElementById('user-in').value;
             const p = document.getElementById('pass-in').value;
-            if(!u || p.length < 6) return alert("Dados incorretos!");
-            const email = u.trim().toLowerCase() + "@bipolar.com";
-            auth.signInWithEmailAndPassword(email, p).catch(() => auth.createUserWithEmailAndPassword(email, p));
-        }
-
-        auth.onAuthStateChanged(user => {
-            if(user) {
+            
+            if(u.trim() !== "" && p.length >= 4) {
+                userLogado = u.trim();
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('main-app').style.display = 'block';
                 document.getElementById('nav-ui').style.display = 'flex';
-                trocarModo('esp');
-                setInterval(gerarParticula, 1000);
+                
+                // Entra na sala inicial do servidor
+                socket.emit('join room', canalAtual); 
+                setInterval(gerarParticula, 2000);
+            } else {
+                alert("Digite um usuário e senha (min 4 caracteres)");
             }
-        });
+        }
 
         function trocarModo(m) {
             canalAtual = m === 'esp' ? 'esperanca' : 'ladrao';
             const root = document.documentElement;
             const body = document.getElementById('body-context');
             
-            // EFEITO SHAKE AO TROCAR
             body.classList.remove('shake-effect');
-            void body.offsetWidth; // Reset animação
+            void body.offsetWidth; 
             body.classList.add('shake-effect');
 
             if(m === 'esp') {
@@ -165,68 +141,65 @@
             document.getElementById('btn-lad').classList.toggle('active', m === 'lad');
             document.getElementById('main-score').innerText = placar[m];
             
-            ouvirMensagens();
-        }
-
-        function ouvirMensagens() {
-            const list = document.getElementById('messages-list');
-            list.innerHTML = "";
-            db.ref("bipolar_vElite/" + canalAtual).off();
-            db.ref("bipolar_vElite/" + canalAtual).limitToLast(50).on("child_added", snap => {
-                const data = snap.val();
-                const tempoPassado = Date.now() - data.timestamp;
-
-                if (tempoPassado < TEMPO_LIMITE) {
-                    const div = document.createElement('div');
-                    div.className = 'msg-bubble';
-                    div.id = "msg-" + snap.key;
-                    div.innerHTML = `<span class="msg-user">${data.user}</span><div class="msg-text">${data.text}</div>`;
-                    list.appendChild(div);
-                    list.scrollTop = list.scrollHeight;
-
-                    // LÓGICA PARA SUMIR EM 8 MINUTOS
-                    setTimeout(() => {
-                        if(div) div.style.opacity = '0';
-                        setTimeout(() => div.remove(), 500);
-                    }, TEMPO_LIMITE - tempoPassado);
-                }
-            });
-        }
-
-        function contarPonto() {
-            const m = canalAtual === 'esperanca' ? 'esp' : 'lad';
-            placar[m]++; // CONTAGEM DE 1 EM 1
-            document.getElementById('main-score').innerText = placar[m];
+            document.getElementById('messages-list').innerHTML = "";
+            socket.emit('join room', canalAtual); // Notifica o server.js da troca de sala
         }
 
         function enviarMensagem() {
             const input = document.getElementById('chat-input');
-            if(!input.value.trim()) return;
-            
-            db.ref("bipolar_vElite/" + canalAtual).push({
-                user: auth.currentUser.email.split('@')[0],
-                text: input.value,
-                timestamp: Date.now()
+            const msg = input.value.trim();
+            if(!msg) return;
+
+            // Envia para o servidor via Socket.io
+            socket.emit('chat message', {
+                room: canalAtual,
+                user: userLogado,
+                text: msg
             });
+
             input.value = "";
+        }
+
+        // Escuta novas mensagens vindas do servidor
+        socket.on('chat message', (data) => {
+            const list = document.getElementById('messages-list');
+            const div = document.createElement('div');
+            div.className = 'msg-bubble';
+            div.innerHTML = `<span class="msg-user">${data.user}</span><div class="msg-text">${data.text}</div>`;
+            
+            list.appendChild(div);
+            list.scrollTop = list.scrollHeight;
+
+            // Remove a mensagem após 8 minutos
+            setTimeout(() => {
+                div.style.opacity = '0';
+                setTimeout(() => div.remove(), 500);
+            }, TEMPO_MENSAGEM);
+        });
+
+        function contarPonto() {
+            const m = canalAtual === 'esperanca' ? 'esp' : 'lad';
+            placar[m]++;
+            document.getElementById('main-score').innerText = placar[m];
         }
 
         function gerarParticula() {
             const p = document.createElement('div');
             p.className = 'particle';
             p.innerHTML = canalAtual === 'esperanca' ? '💖' : '💀';
-            p.style.left = (Math.random() * 40 + 30) + '%';
+            p.style.left = (Math.random() * 80 + 10) + '%';
             p.style.bottom = '-10%';
+            p.style.cursor = 'pointer';
             p.onclick = () => { contarPonto(); p.remove(); };
             
             document.getElementById('main-app').appendChild(p);
 
             let pos = -10;
             let anim = setInterval(() => {
-                pos += 0.6;
+                pos += 0.5;
                 p.style.bottom = pos + '%';
                 if(pos > 110) { clearInterval(anim); p.remove(); }
-            }, 25);
+            }, 30);
         }
 
         document.addEventListener('keypress', e => { if(e.key === 'Enter') enviarMensagem(); });
