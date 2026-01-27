@@ -2,79 +2,57 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Dual Chat: Kawaii vs Hacker</title>
+    <title>Minecraft Chat: Amigável vs Infernal</title>
     <style>
-        /* Base do Layout */
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; transition: 0.8s; }
+        @import url('https://fonts.cdnfonts.com/css/minecraftia');
+
+        body { font-family: 'Minecraftia', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; transition: 0.5s; }
+        
         #sidebar { width: 30%; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; z-index: 2; transition: 0.5s; }
-        .bg-particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
-        #toggle-btn { font-size: 80px; cursor: pointer; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); user-select: none; z-index: 3; filter: drop-shadow(0 0 10px rgba(0,0,0,0.1)); }
-        #toggle-btn:hover { transform: scale(1.2); }
+        #toggle-btn { font-size: 120px; cursor: pointer; transition: transform 0.2s; user-select: none; z-index: 3; image-rendering: pixelated; }
         
-        #chat-container { width: 70%; display: flex; flex-direction: column; z-index: 2; transition: 0.5s; position: relative; }
-        #header { padding: 25px; text-align: center; font-size: 28px; font-weight: bold; transition: 0.5s; letter-spacing: 1px; }
-        #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        #chat-container { width: 70%; display: flex; flex-direction: column; z-index: 2; position: relative; transition: 0.5s; }
+        #header { padding: 25px; text-align: center; font-size: 22px; transition: 0.5s; text-transform: uppercase; }
+        #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; z-index: 2; }
         
-        .message { max-width: 75%; padding: 14px; border-radius: 20px; align-self: flex-start; transition: 0.3s; position: relative; }
-        .particle { position: absolute; bottom: -50px; animation: moveUp 4s linear infinite; opacity: 0.6; font-size: 24px; }
-        @keyframes moveUp { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(-110vh) rotate(360deg); opacity: 0; } }
+        .message { max-width: 75%; padding: 12px; border: 4px solid #000; align-self: flex-start; image-rendering: pixelated; word-wrap: break-word; }
+        .message img { max-width: 100%; border: 2px solid #000; margin-top: 5px; display: block; }
+        .message audio { width: 100%; margin-top: 5px; }
+        .my-message { align-self: flex-end; }
 
-        /* --- TEMA AMIGÁVEL (Kawaii Style) --- */
-        .theme-amigavel { background-color: #fff5f8; color: #ff85a2; font-family: 'Comic Sans MS', 'Arial', sans-serif; }
-        .theme-amigavel #sidebar { background-color: #ffeef2; border-right: 5px dotted #ffc1d1; }
-        .theme-amigavel #chat-container { background: #ffffff; }
-        .theme-amigavel #header { color: #ff4d7d; text-shadow: 2px 2px #ffcada; }
-        .theme-amigavel .message { background: #fff0f5; color: #666; border: 2px solid #ffdae3; border-radius: 25px 25px 25px 5px; box-shadow: 3px 3px 10px rgba(255, 182, 193, 0.2); }
-        .theme-amigavel .my-message { align-self: flex-end; background: #ff85a2; color: white; border-radius: 25px 25px 5px 25px; border: none; }
-        .theme-amigavel #msg-input { border: 3px solid #ffc1d1; border-radius: 30px; padding: 15px; background: #fffafb; color: #ff4d7d; }
-        .theme-amigavel button { background: #ff4d7d; border-radius: 50%; box-shadow: 0 4px 10px #ffcada; }
-
-        /* --- TEMA NÃO AMIGÁVEL (Hacker Dark Neon) --- */
-        .theme-nao-amigavel { background-color: #000000; color: #00ff41; font-family: 'Courier New', Courier, monospace; }
-        .theme-nao-amigavel #sidebar { 
-            background-color: #050505; 
-            border-right: 2px solid #ff0000;
-            box-shadow: 5px 0 20px rgba(255, 0, 0, 0.4); 
-        }
-        .theme-nao-amigavel #chat-container { background: #080808; border-left: 1px solid #ff0000; }
-        .theme-nao-amigavel #header { 
-            color: #ff0000; 
-            text-shadow: 0 0 10px #ff0000, 0 0 20px #8b0000; 
-            border-bottom: 1px solid #ff0000;
-            text-transform: uppercase;
-        }
-        .theme-nao-amigavel .message { 
-            background: #111; 
-            color: #00ff41; 
-            border: 1px solid #00ff41; 
-            border-radius: 0px; 
-            box-shadow: 0 0 5px #00ff41;
-        }
-        .theme-nao-amigavel .my-message { 
-            align-self: flex-end; 
-            background: #000; 
-            color: #ff0000; 
-            border: 1px solid #ff0000; 
-            box-shadow: 0 0 10px #ff0000; 
-        }
-        .theme-nao-amigavel #msg-input { 
-            background: #000; 
-            border: 1px solid #ff0000; 
-            color: #ff0000; 
-            border-radius: 0px; 
-            font-family: 'Courier New', monospace;
-        }
-        .theme-nao-amigavel button { 
-            background: #000; 
-            color: #ff0000; 
-            border: 1px solid #ff0000; 
-            box-shadow: 0 0 10px #ff0000; 
-            border-radius: 5px;
+        .bg-particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; overflow: hidden; }
+        .particle { position: absolute; bottom: -60px; cursor: pointer; user-select: none; z-index: 5; pointer-events: auto; image-rendering: pixelated; }
+        
+        @keyframes moveUp { 
+            0% { transform: translateY(0); opacity: 1; } 
+            100% { transform: translateY(-110vh); opacity: 0; } 
         }
 
-        #input-area { padding: 20px; display: flex; gap: 10px; transition: 0.5s; }
-        input { flex: 1; outline: none; transition: 0.3s; }
-        button { border: none; width: 50px; height: 50px; cursor: pointer; font-size: 20px; transition: 0.3s; display: flex; align-items: center; justify-content: center; }
+        /* TEMA AMIGÁVEL */
+        .theme-amigavel { background-color: #ffffff; }
+        .theme-amigavel #sidebar { background-color: #ffffff; border-right: 6px solid #f0f0f0; }
+        .theme-amigavel #header { color: #ff4d7d; border-bottom: 6px solid #f0f0f0; }
+        .theme-amigavel .message { background: #fff; border-color: #000; box-shadow: 4px 4px 0px #ddd; }
+        .theme-amigavel .my-message { background: #ff80a5; border-color: #ff4d7d; color: white; box-shadow: 4px 4px 0px #ffcada; }
+        .theme-amigavel #input-area { background: #fff; border-top: 6px solid #f0f0f0; }
+        .theme-amigavel button, .theme-amigavel label { background: #ff4d7d; color: white; border: 4px solid #000; box-shadow: 3px 3px 0px #888; }
+
+        /* TEMA INFERNAL */
+        .theme-nao-amigavel { background-color: #000000; }
+        .theme-nao-amigavel #sidebar { border-right: 2px solid #39ff14; }
+        .theme-nao-amigavel #header { color: #ff0000; border-bottom: 2px solid #39ff14; text-shadow: 0 0 10px #ff0000; }
+        .theme-nao-amigavel .message { background: #000; border: 2px solid #39ff14; color: #39ff14; box-shadow: 0 0 8px #39ff14; }
+        .theme-nao-amigavel .my-message { border-color: #ff0000; color: #ff0000; box-shadow: 0 0 10px #ff0000; }
+        .theme-nao-amigavel #input-area { border-top: 2px solid #39ff14; }
+        .theme-nao-amigavel button, .theme-nao-amigavel label { background: #000; border: 2px solid #ff0000; color: #ff0000; box-shadow: 0 0 8px #ff0000; }
+
+        /* Área de Input e Botões */
+        #input-area { padding: 15px; display: flex; gap: 8px; align-items: center; }
+        input[type="text"] { flex: 1; padding: 12px; outline: none; font-family: 'Minecraftia', sans-serif; border: 4px solid #ddd; }
+        .theme-nao-amigavel input[type="text"] { background: #000; border: 2px solid #39ff14; color: #39ff14; }
+        
+        label, button { cursor: pointer; padding: 8px 12px; font-family: 'Minecraftia', sans-serif; font-size: 12px; display: flex; align-items: center; justify-content: center; }
+        input[type="file"] { display: none; }
     </style>
 </head>
 <body class="theme-amigavel">
@@ -82,17 +60,23 @@
     <audio id="sound-nao-amigavel" src="https://assets.mixkit.co/active_storage/sfx/2565/2565-preview.mp3"></audio>
 
     <div id="sidebar">
-        <div class="bg-particles" id="particle-container"></div>
-        <div id="toggle-btn">🌸</div>
-        <p style="font-weight: bold; margin-top: 20px;">Clique para mudar a realidade</p>
+        <div class="bg-particles" id="sidebar-particles"></div>
+        <div id="toggle-btn">❤️</div>
     </div>
 
     <div id="chat-container">
-        <div id="header">Modo Amigável 🌸</div>
+        <div class="bg-particles" id="chat-particles"></div>
+        <div id="header">Modo Amigável</div>
         <div id="messages"></div>
         <div id="input-area">
-            <input type="text" id="msg-input" placeholder="Digite uma mensagem...">
-            <button id="send-btn">➔</button>
+            <label for="img-input">🖼️</label>
+            <input type="file" id="img-input" accept="image/*">
+            
+            <label for="audio-input">🎵</label>
+            <input type="file" id="audio-input" accept="audio/*">
+            
+            <input type="text" id="msg-input" placeholder="Mensagem...">
+            <button id="send-btn">SEND</button>
         </div>
     </div>
 
@@ -100,40 +84,48 @@
     <script>
         const socket = io();
         let currentRoom = 'amigavel';
-        const user = "User_" + Math.floor(Math.random() * 999);
+        const user = "Player_" + Math.floor(Math.random() * 99);
         let pInterval;
 
-        function startParticles(emoji) {
+        function startAllParticles(emoji) {
             if (pInterval) clearInterval(pInterval);
             pInterval = setInterval(() => {
-                const p = document.createElement('div');
-                p.className = 'particle';
-                p.innerText = emoji;
-                p.style.left = Math.random() * 100 + '%';
-                p.style.fontSize = (Math.random() * 20 + 10) + 'px';
-                document.getElementById('particle-container').appendChild(p);
-                setTimeout(() => p.remove(), 4000);
-            }, 400);
+                const containers = ['sidebar-particles', 'chat-particles'];
+                containers.forEach(id => {
+                    const p = document.createElement('div');
+                    p.className = 'particle';
+                    p.innerText = emoji;
+                    p.style.left = Math.random() * 100 + '%';
+                    p.style.fontSize = '40px';
+                    p.style.animation = `moveUp ${(Math.random() * 2 + 3)}s linear forwards`;
+                    p.onclick = function() { this.innerText = currentRoom === 'amigavel' ? '💥' : '🔥'; setTimeout(() => this.remove(), 150); };
+                    document.getElementById(id).appendChild(p);
+                    setTimeout(() => p.remove(), 4000);
+                });
+            }, 600);
         }
 
-        document.getElementById('toggle-btn').onclick = function() {
-            document.getElementById('particle-container').innerHTML = '';
-            if (currentRoom === 'amigavel') {
-                currentRoom = 'nao-amigavel';
-                document.body.className = 'theme-nao-amigavel';
-                this.innerText = '💀';
-                document.getElementById('header').innerText = 'SISTEMA COMPROMETIDO 💀';
-                startParticles('⚡');
-            } else {
-                currentRoom = 'amigavel';
-                document.body.className = 'theme-amigavel';
-                this.innerText = '🌸';
-                document.getElementById('header').innerText = 'Modo Amigável 🌸';
-                startParticles('🌸');
+        // Função para converter arquivo em Base64 e enviar
+        function sendFile(input, type) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    socket.emit('chat message', { 
+                        room: currentRoom, 
+                        user: user, 
+                        text: '', 
+                        file: e.target.result, 
+                        fileType: type 
+                    });
+                };
+                reader.readAsDataURL(file);
+                input.value = ''; // Limpa o input
             }
-            socket.emit('join room', currentRoom);
-            document.getElementById('messages').innerHTML = '';
-        };
+        }
+
+        document.getElementById('img-input').onchange = function() { sendFile(this, 'image'); };
+        document.getElementById('audio-input').onchange = function() { sendFile(this, 'audio'); };
 
         document.getElementById('send-btn').onclick = () => {
             const input = document.getElementById('msg-input');
@@ -149,12 +141,38 @@
 
             const div = document.createElement('div');
             div.className = 'message ' + (msg.user === user ? 'my-message' : '');
-            div.innerHTML = `<b>${msg.user}:</b><br>${msg.text}`;
+            
+            let content = `<b>${msg.user}:</b><br>`;
+            if (msg.text) content += `<span>${msg.text}</span>`;
+            if (msg.file) {
+                if (msg.fileType === 'image') content += `<img src="${msg.file}">`;
+                if (msg.fileType === 'audio') content += `<audio controls src="${msg.file}"></audio>`;
+            }
+            
+            div.innerHTML = content;
             document.getElementById('messages').appendChild(div);
             document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
         });
 
-        startParticles('🌸');
+        document.getElementById('toggle-btn').onclick = function() {
+            if (currentRoom === 'amigavel') {
+                currentRoom = 'nao-amigavel';
+                document.body.className = 'theme-nao-amigavel';
+                this.innerText = '💀';
+                document.getElementById('header').innerText = 'Modo Infernal';
+                startAllParticles('💀');
+            } else {
+                currentRoom = 'amigavel';
+                document.body.className = 'theme-amigavel';
+                this.innerText = '❤️';
+                document.getElementById('header').innerText = 'Modo Amigável';
+                startAllParticles('❤️');
+            }
+            socket.emit('join room', currentRoom);
+            document.getElementById('messages').innerHTML = '';
+        };
+
+        startAllParticles('❤️');
         socket.emit('join room', 'amigavel');
     </script>
 </body>
