@@ -9,10 +9,10 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <style>
         body {
-            background-color: #0d0208; /* Fundo sombrio */
+            background-color: #0d0208;
             background-image: radial-gradient(circle, #1a0510 0%, #0d0208 100%);
-            color: #ff0055;
-            font-family: 'Courier New', Courier, monospace;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -28,44 +28,49 @@
             color: #fff;
             text-shadow: 0 0 10px #ff0055, 0 0 20px #ff0055, 0 0 40px #ff0000;
             margin-bottom: 20px;
+            letter-spacing: 5px;
         }
 
         #login-container, #chat-container {
-            background: rgba(20, 0, 10, 0.9);
-            padding: 30px;
-            border-radius: 15px;
+            background: rgba(15, 0, 8, 0.95);
+            padding: 40px;
+            border-radius: 20px;
             border: 2px solid #ff0055;
-            box-shadow: 0 0 15px #ff0055, inset 0 0 5px #ff0000;
+            box-shadow: 0 0 25px rgba(255, 0, 85, 0.5);
             text-align: center;
-            width: 350px;
+            width: 400px;
+            transition: 0.5s;
         }
 
         input {
-            width: 90%;
-            padding: 12px;
+            width: 100%;
+            padding: 15px;
             margin: 10px 0;
             background: #000;
             border: 1px solid #ff0055;
             color: #ff0055;
-            border-radius: 5px;
+            border-radius: 8px;
             outline: none;
+            box-sizing: border-box;
+            font-size: 1rem;
         }
 
         input:focus {
-            box-shadow: 0 0 10px #ff0055;
+            box-shadow: 0 0 15px #ff0055;
         }
 
         button {
             width: 100%;
-            padding: 12px;
+            padding: 15px;
             background: #44001a;
             color: #fff;
-            border: none;
-            border-radius: 5px;
+            border: 1px solid #ff0055;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
             text-shadow: 0 0 5px #ff0055;
             transition: 0.3s;
+            margin-top: 10px;
         }
 
         button:hover {
@@ -73,46 +78,52 @@
             box-shadow: 0 0 20px #ff0055;
         }
 
+        /* Layout do Chat */
         #messages {
-            height: 300px;
+            height: 350px;
             overflow-y: auto;
-            border: 1px solid #333;
-            margin-bottom: 10px;
-            padding: 10px;
+            margin-bottom: 15px;
+            padding: 15px;
             text-align: left;
             background: #050002;
+            border-radius: 10px;
+            border: 1px solid #222;
         }
 
         .msg {
-            margin-bottom: 8px;
-            padding: 5px;
-            border-bottom: 1px solid #222;
+            margin-bottom: 12px;
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            word-wrap: break-word;
         }
 
-        .user-name { color: #ff0055; font-weight: bold; }
+        .user-name { color: #ff0055; font-weight: bold; display: block; margin-bottom: 3px; font-size: 0.8rem;}
         .hidden { display: none; }
+        
+        /* Custom Scrollbar */
+        #messages::-webkit-scrollbar { width: 5px; }
+        #messages::-webkit-scrollbar-thumb { background: #ff0055; border-radius: 10px; }
     </style>
 </head>
 <body>
 
     <div id="login-container">
         <h1>Bipolar Chat</h1>
-        <p>🐱 Sombrio & Fofo 💀</p>
-        <input type="email" id="email" placeholder="E-mail">
-        <input type="password" id="password" placeholder="Senha">
+        <input type="email" id="email" placeholder="Seu E-mail">
+        <input type="password" id="password" placeholder="Sua Senha">
         <button onclick="login()">ENTRAR / REGISTRAR</button>
     </div>
 
     <div id="chat-container" class="hidden">
         <h1>Bipolar Chat</h1>
         <div id="messages"></div>
-        <input type="text" id="messageInput" placeholder="Digite sua mensagem...">
+        <input type="text" id="messageInput" placeholder="Digite sua mensagem e aperte Enter...">
         <button onclick="sendMessage()">ENVIAR</button>
-        <button onclick="logout()" style="margin-top: 10px; background: #222;">SAIR</button>
+        <button onclick="logout()" style="background: #111; border-color: #333; font-size: 0.7rem; margin-top: 20px;">SAIR</button>
     </div>
 
     <script>
-        // COLE AS SUAS CHAVES DO FIREBASE ABAIXO
         const firebaseConfig = {
             apiKey: "AIzaSyD7GIQgMVr0lf4BOyQkXBh_Qhk-GK6wMK4",
             authDomain: "chat2000-5815b.firebaseapp.com",
@@ -127,10 +138,11 @@
         const auth = firebase.auth();
         const db = firebase.database();
 
-        // FUNÇÃO PARA ENVIAR COM ENTER
+        // --- FUNÇÃO ENTER ---
         document.addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
-                if (!document.getElementById('login-container').classList.contains('hidden')) {
+                const isLoginVisible = !document.getElementById('login-container').classList.contains('hidden');
+                if (isLoginVisible) {
                     login();
                 } else {
                     sendMessage();
@@ -141,6 +153,8 @@
         function login() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+            if(!email || !password) return alert("Preencha tudo!");
+            
             auth.signInWithEmailAndPassword(email, password)
                 .catch(() => auth.createUserWithEmailAndPassword(email, password));
         }
@@ -160,15 +174,16 @@
             const text = document.getElementById('messageInput').value;
             if (text.trim() !== "") {
                 db.ref("messages").push({
-                    user: auth.currentUser.email,
-                    text: text
+                    user: auth.currentUser.email.split('@')[0], // Nome curto
+                    text: text,
+                    timestamp: Date.now()
                 });
                 document.getElementById('messageInput').value = "";
             }
         }
 
         function loadMessages() {
-            db.ref("messages").on("child_added", snapshot => {
+            db.ref("messages").limitToLast(50).on("child_added", snapshot => {
                 const data = snapshot.val();
                 const msgDiv = document.createElement("div");
                 msgDiv.classList.add("msg");
