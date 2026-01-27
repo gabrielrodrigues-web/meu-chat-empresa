@@ -3,79 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BIPOLAR CHAT - V4</title>
+    <title>BIPOLAR CHAT - INSANE</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-storage-compat.js"></script>
     <style>
-        * { box-sizing: border-box; outline: none; }
+        * { box-sizing: border-box; outline: none; cursor: crosshair; }
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Courier New', monospace; overflow: hidden; background: #000; }
 
-        /* TELA DE LOGIN ESTILO NEON */
+        /* ANIMAÇÃO DE TREMIDA (SHAKE) */
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            100% { transform: translate(1px, 1px) rotate(0deg); }
+        }
+        .shake-effect { animation: shake 0.5s; animation-iteration-count: 1; }
+
+        /* LOGIN */
         #login-screen { position: fixed; inset: 0; background: #000; z-index: 2000; display: flex; align-items: center; justify-content: center; }
         .login-box { border: 2px solid #ff0055; padding: 40px; border-radius: 20px; text-align: center; background: #0a0a0a; box-shadow: 0 0 30px #ff0055; width: 350px; }
-        .login-box h1 { color: #fff; text-shadow: 0 0 15px #ff0055; margin-bottom: 25px; letter-spacing: 3px; }
-        .login-box input { width: 100%; padding: 15px; margin: 10px 0; background: #000; border: 1px solid #ff0055; color: #fff; border-radius: 10px; }
-        .login-box button { width: 100%; padding: 15px; background: #40001a; color: #fff; border: 1px solid #ff0055; cursor: pointer; border-radius: 10px; font-weight: bold; transition: 0.3s; }
-        .login-box button:hover { background: #ff0055; box-shadow: 0 0 20px #ff0055; }
+        input { width: 100%; padding: 15px; margin: 10px 0; background: #000; border: 1px solid #ff0055; color: #fff; border-radius: 10px; }
 
-        /* ESTRUTURA DOS MODOS */
+        /* ESTRUTURA */
         #main-app { display: none; height: 100vh; position: relative; }
-        .mode-container { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.8s ease-in-out; }
+        .mode-container { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         
-        /* MODO ESPERANÇA */
-        .esperanca-bg { background: radial-gradient(circle, #fff 0%, #fff1f5 100%); color: #ff0055; }
-        /* MODO LADRÃO DE ALMAS */
-        .ladrao-bg { background: radial-gradient(circle, #1a0000 0%, #000 100%); color: #ff0000; }
+        .esperanca-bg { background: radial-gradient(circle, #fff 0%, #ffcbd5 100%); color: #ff0055; }
+        .ladrao-bg { background: radial-gradient(circle, #2a0000 0%, #000 100%); color: #ff0000; }
 
         /* ÍCONES GIGANTES */
-        .giant-icon { font-size: 180px; z-index: 10; filter: drop-shadow(0 0 30px rgba(255, 0, 85, 0.4)); animation: pulse 2s infinite; user-select: none; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        .giant-icon { font-size: 200px; z-index: 10; filter: drop-shadow(0 0 40px rgba(255, 0, 85, 0.6)); user-select: none; transition: 0.3s; }
+        .giant-icon:hover { transform: scale(1.1); }
         
-        .mode-label { font-size: 28px; font-weight: bold; margin: 15px 0 5px; z-index: 10; text-transform: uppercase; letter-spacing: 4px; }
-        .score-display { font-size: 45px; font-weight: bold; z-index: 10; text-shadow: 0 0 10px rgba(0,0,0,0.2); }
+        .mode-label { font-size: 32px; font-weight: bold; margin-top: 20px; z-index: 10; letter-spacing: 5px; text-transform: uppercase; }
+        .score-display { font-size: 60px; font-weight: bold; z-index: 10; font-family: 'Arial Black', sans-serif; }
 
-        /* CAIXA DE CHAT ESTILIZADA */
+        /* CAIXA DE CHAT MAIOR */
         .chat-dock {
-            position: absolute; right: 30px; bottom: 30px; width: 350px; height: 500px;
-            background: rgba(0,0,0,0.9); border: 2px solid #ff0055; border-radius: 20px;
-            display: flex; flex-direction: column; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            position: absolute; right: 40px; bottom: 40px; width: 450px; height: 600px;
+            background: rgba(0,0,0,0.95); border: 3px solid #ff0055; border-radius: 25px;
+            display: flex; flex-direction: column; z-index: 100; box-shadow: 0 0 40px rgba(0,0,0,1);
         }
-        .chat-header { padding: 15px; text-align: center; border-bottom: 1px solid #333; font-weight: bold; font-size: 12px; color: #ff0055; }
-        #messages-list { flex: 1; overflow-y: auto; padding: 15px; color: #eee; font-size: 14px; }
-        .msg-line { margin-bottom: 10px; line-height: 1.4; border-left: 2px solid #ff0055; padding-left: 8px; }
-        
-        /* BARRA DE INPUT */
-        .input-group { display: flex; padding: 12px; gap: 10px; background: #111; border-radius: 0 0 20px 20px; align-items: center; }
-        .input-group input { flex: 1; background: transparent; border: none; color: #fff; font-size: 14px; }
-        .btn-send { background: #ff0055; border: none; color: #fff; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        #messages-list { flex: 1; overflow-y: auto; padding: 20px; color: #fff; font-size: 16px; scroll-behavior: smooth; }
+        .msg-line { margin-bottom: 15px; border-left: 3px solid #ff0055; padding-left: 12px; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
 
-        /* BOTÕES DE NAVEGAÇÃO */
-        .nav-top { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 500; display: flex; gap: 15px; }
-        .btn-nav { padding: 10px 25px; border-radius: 30px; border: 2px solid #ff0055; cursor: pointer; font-weight: bold; transition: 0.3s; background: #000; color: #ff0055; }
-        .btn-nav.active { background: #ff0055; color: #fff; box-shadow: 0 0 15px #ff0055; }
+        .input-group { display: flex; padding: 15px; background: #111; border-radius: 0 0 25px 25px; align-items: center; gap: 10px; }
+        .input-group input { flex: 1; background: transparent; border: none; color: #fff; font-size: 16px; }
+
+        /* BOTÕES TOPO */
+        .nav-top { position: fixed; top: 25px; left: 50%; transform: translateX(-50%); z-index: 500; display: flex; gap: 20px; }
+        .btn-nav { padding: 12px 30px; border-radius: 40px; border: 2px solid #ff0055; cursor: pointer; font-weight: bold; background: #000; color: #ff0055; transition: 0.4s; }
+        .btn-nav.active { background: #ff0055; color: #fff; box-shadow: 0 0 25px #ff0055; }
 
         /* PARTÍCULAS */
-        .part { position: absolute; cursor: pointer; font-size: 40px; z-index: 5; opacity: 0.7; transition: 0.2s; }
-        .part:hover { transform: scale(1.5); opacity: 1; }
-
-        .hidden { display: none !important; opacity: 0; pointer-events: none; }
+        .part { position: absolute; cursor: pointer; font-size: 50px; z-index: 5; opacity: 0.8; user-select: none; }
+        
+        .hidden { display: none !important; }
     </style>
 </head>
-<body>
+<body id="master-body">
 
     <div id="login-screen">
         <div class="login-box">
-            <h1>BIPOLAR</h1>
+            <h1 style="color:#fff; text-shadow:0 0 10px #ff0055">BIPOLAR ACCESS</h1>
             <input type="text" id="user" placeholder="USUÁRIO">
-            <input type="password" id="pass" placeholder="SENHA (6 dígitos)">
-            <button onclick="logar()">ENTRAR NO SISTEMA</button>
+            <input type="password" id="pass" placeholder="SENHA">
+            <button onclick="logar()" style="width:100%; padding:15px; background:#40001a; color:#fff; border:1px solid #ff0055; border-radius:10px; cursor:pointer">ENTRAR</button>
         </div>
     </div>
 
     <div class="nav-top" id="nav" style="display:none">
-        <button id="nav-esp" class="btn-nav active" onclick="switchMode('esp')">MODO ESPERANÇA</button>
+        <button id="nav-esp" class="btn-nav active" onclick="switchMode('esp')">ESPERANÇA</button>
         <button id="nav-lad" class="btn-nav" onclick="switchMode('lad')">LADRÃO DE ALMAS</button>
     </div>
 
@@ -93,12 +97,11 @@
         </div>
 
         <div class="chat-dock" id="chat-ui">
-            <div class="chat-header" id="chat-title">CANAL: ESPERANÇA</div>
             <div id="messages-list"></div>
             <div class="input-group">
-                <span onclick="document.getElementById('f-up').click()" style="cursor:pointer">📷</span>
-                <input type="text" id="msg-input" placeholder="Escreva algo...">
-                <button class="btn-send" onclick="enviar()">SEND</button>
+                <span onclick="document.getElementById('f-up').click()" style="cursor:pointer">📸</span>
+                <input type="text" id="msg-input" placeholder="Mensagem rápida (8 min)...">
+                <button onclick="enviar()" style="background:#ff0055; border:none; color:#fff; padding:10px 20px; border-radius:10px; cursor:pointer; font-weight:bold">SEND</button>
                 <input type="file" id="f-up" class="hidden" onchange="upload(this.files[0])">
             </div>
         </div>
@@ -125,7 +128,7 @@
         function logar() {
             const u = document.getElementById('user').value;
             const p = document.getElementById('pass').value;
-            if(!u || p.length < 6) return alert("Dados inválidos!");
+            if(!u || p.length < 6) return alert("Verifique os dados!");
             const email = u.trim().toLowerCase() + "@bipolar.com";
             auth.signInWithEmailAndPassword(email, p).catch(() => auth.createUserWithEmailAndPassword(email, p));
         }
@@ -136,44 +139,68 @@
                 document.getElementById('main-app').style.display = 'block';
                 document.getElementById('nav').style.display = 'flex';
                 switchMode('esp');
-                setInterval(spawnParticle, 900);
+                setInterval(spawnParticle, 1000);
             }
         });
 
         function switchMode(m) {
             currentChannel = m === 'esp' ? 'esperanca' : 'ladrao';
             
-            // UI Toggle
+            // TREMIDA DE TELA
+            const body = document.getElementById('master-body');
+            body.classList.remove('shake-effect');
+            void body.offsetWidth; // Reset animação
+            body.classList.add('shake-effect');
+
             document.getElementById('view-esp').classList.toggle('hidden', m !== 'esp');
             document.getElementById('view-lad').classList.toggle('hidden', m !== 'lad');
             document.getElementById('nav-esp').classList.toggle('active', m === 'esp');
             document.getElementById('nav-lad').classList.toggle('active', m === 'lad');
             
-            // Chat Style
             const color = m === 'esp' ? '#ff0055' : '#ff0000';
             document.getElementById('chat-ui').style.borderColor = color;
-            document.getElementById('chat-title').innerText = "CANAL: " + currentChannel.toUpperCase();
-            document.getElementById('chat-title').style.color = color;
 
-            // Load Messages
             document.getElementById('messages-list').innerHTML = "";
-            db.ref("bipolar_v4/" + currentChannel).off();
-            db.ref("bipolar_v4/" + currentChannel).limitToLast(25).on("child_added", snap => {
-                const d = snap.val();
-                const list = document.getElementById('messages-list');
-                let content = d.type === 'img' ? `<img src="${d.url}" style="width:100%; border-radius:10px; margin-top:5px;">` : d.text;
-                list.innerHTML += `<div class="msg-line"><b style="color:${color}">${d.user}:</b><br>${content}</div>`;
-                list.scrollTop = list.scrollHeight;
+            db.ref("bipolar_v5/" + currentChannel).off();
+            db.ref("bipolar_v5/" + currentChannel).limitToLast(30).on("child_added", snap => {
+                renderMsg(snap.val(), snap.key);
             });
+        }
+
+        function renderMsg(d, key) {
+            const now = Date.now();
+            const age = now - d.timestamp;
+            const eightMins = 8 * 60 * 1000;
+
+            if (age > eightMins) return; // Se já passou de 8 min, nem renderiza
+
+            const list = document.getElementById('messages-list');
+            const color = currentChannel === 'esperanca' ? '#ff0055' : '#ff0000';
+            const id = "msg-" + key;
+            
+            let content = d.type === 'img' ? `<img src="${d.url}" style="width:100%; border-radius:15px; margin-top:5px;">` : d.text;
+            
+            list.innerHTML += `<div class="msg-line" id="${id}"><b style="color:${color}">${d.user}:</b><br>${content}</div>`;
+            list.scrollTop = list.scrollHeight;
+
+            // TIMER PARA SUMIR
+            setTimeout(() => {
+                const el = document.getElementById(id);
+                if(el) {
+                    el.style.opacity = '0';
+                    setTimeout(() => el.remove(), 500);
+                }
+            }, eightMins - age);
         }
 
         function enviar() {
             const val = document.getElementById('msg-input').value;
             if(val.trim()) {
-                db.ref("bipolar_v4/" + currentChannel).push({
+                db.ref("bipolar_v5/" + currentChannel).push({
                     user: auth.currentUser.email.split('@')[0],
                     text: val,
-                    type: 'text'
+                    type: 'text',
+                    timestamp: Date.now()
                 });
                 document.getElementById('msg-input').value = "";
             }
@@ -181,19 +208,17 @@
 
         function spawnParticle() {
             const isEsp = currentChannel === 'esperanca';
-            const emoji = isEsp ? '💖' : '💀';
             const p = document.createElement('div');
             p.className = 'part';
-            p.innerHTML = emoji;
-            // Spawna atrás do ícone central
-            p.style.left = (Math.random() * 30 + 35) + '%';
+            p.innerHTML = isEsp ? '💖' : '💀';
+            p.style.left = (Math.random() * 40 + 30) + '%';
             p.style.bottom = '-10%';
             
             p.onclick = () => {
-                if(isEsp) { ptsEsp += 10; document.getElementById('scr-esp').innerText = ptsEsp; }
-                else { ptsLad += 10; document.getElementById('scr-lad').innerText = ptsLad; }
-                p.style.transform = "scale(0)";
-                setTimeout(() => p.remove(), 200);
+                // PONTUAÇÃO DE 1 EM 1
+                if(isEsp) { ptsEsp++; document.getElementById('scr-esp').innerText = ptsEsp; }
+                else { ptsLad++; document.getElementById('scr-lad').innerText = ptsLad; }
+                p.remove();
             };
 
             const container = isEsp ? 'view-esp' : 'view-lad';
@@ -201,20 +226,21 @@
 
             let b = -10;
             let move = setInterval(() => {
-                b += 0.6;
+                b += 0.5;
                 p.style.bottom = b + '%';
                 if(b > 110) { clearInterval(move); p.remove(); }
-            }, 25);
+            }, 20);
         }
 
         function upload(f) {
             if(!f) return;
-            const ref = storage.ref(`bipolar/${Date.now()}`);
+            const ref = storage.ref(`bipolar_v5/${Date.now()}`);
             ref.put(f).then(s => s.ref.getDownloadURL()).then(url => {
-                db.ref("bipolar_v4/" + currentChannel).push({
+                db.ref("bipolar_v5/" + currentChannel).push({
                     user: auth.currentUser.email.split('@')[0],
                     url: url,
-                    type: 'img'
+                    type: 'img',
+                    timestamp: Date.now()
                 });
             });
         }
