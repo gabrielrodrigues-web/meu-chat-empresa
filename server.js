@@ -3,8 +3,7 @@ const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http, { maxHttpBufferSize: 1e7 });
 
-app.use(express.static(__dirname + '/public'));
-
+app.use(express.static(__dirname));
 io.on('connection', (socket) => {
     // Entra em um canal específico
     socket.on('join room', (room) => {
@@ -20,3 +19,4 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 10000;
 http.listen(PORT, () => console.log('Servidor dual rodando na porta ' + PORT));
+
