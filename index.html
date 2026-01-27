@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Minecraft Pro Chat: Persistent Edition</title>
+    <title>Minecraft Pro Chat: Game Edition</title>
     <style>
         @import url('https://fonts.cdnfonts.com/css/minecraftia');
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
@@ -12,10 +12,15 @@
         
         #sidebar { width: 30%; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; z-index: 10; transition: inherit; }
         
-        /* Contorno Neon nos Ícones Principais */
+        /* Contorno Neon */
         #toggle-btn { font-size: 130px; cursor: pointer; transition: 0.3s; user-select: none; z-index: 11; image-rendering: pixelated; }
         .theme-amigavel #toggle-btn { filter: drop-shadow(0 0 15px #ff4d7d); }
         .theme-nao-amigavel #toggle-btn { filter: drop-shadow(0 0 20px #ff0000); }
+
+        /* Placar de Pontos */
+        #score-board { margin-top: 20px; font-size: 20px; font-weight: bold; z-index: 11; padding: 10px 20px; border-radius: 8px; text-transform: uppercase; }
+        .theme-amigavel #score-board { color: #ff4d7d; border: 3px solid #ffcada; background: #fff; }
+        .theme-nao-amigavel #score-board { color: #ff0000; border: 2px solid #ff0000; background: #000; box-shadow: 0 0 10px #ff0000; }
 
         #chat-container { width: 70%; display: flex; flex-direction: column; position: relative; transition: inherit; }
         #header { padding: 30px; text-align: center; font-size: 24px; font-weight: bold; transition: inherit; z-index: 5; border-bottom: 4px solid rgba(0,0,0,0.05); }
@@ -26,41 +31,23 @@
         .message img { max-width: 100%; border-radius: 8px; margin-top: 5px; }
         .my-message { align-self: flex-end; }
 
-        /* Partículas Flutuantes e Clicáveis */
         .bg-particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; overflow: hidden; }
-        .particle { 
-            position: absolute; 
-            bottom: -80px; 
-            cursor: pointer; 
-            z-index: 20; /* Garante que estejam acima de outros elementos do background */
-            pointer-events: auto; /* Permite cliques */
-            image-rendering: pixelated; 
-            transition: transform 0.1s; /* Para o efeito de clique */
-            user-select: none;
-            opacity: 0.7; /* Suave */
-        }
-        .particle:active { transform: scale(1.5); } /* Efeito de clique */
+        .particle { position: absolute; bottom: -80px; cursor: pointer; z-index: 20; pointer-events: auto; image-rendering: pixelated; transition: transform 0.1s; user-select: none; opacity: 0.7; }
+        @keyframes moveUp { 0% { transform: translateY(0) rotate(0deg); opacity: 0.7; } 100% { transform: translateY(-115vh) rotate(360deg); opacity: 0; } }
 
-        @keyframes moveUp { 
-            0% { transform: translateY(0) rotate(0deg); opacity: 0.7; } 
-            100% { transform: translateY(-115vh) rotate(360deg); opacity: 0; } 
-        }
-
-        /* TEMA AMIGÁVEL */
+        /* TEMAS */
         .theme-amigavel { background-color: #fff; font-family: 'Minecraftia', sans-serif; }
         .theme-amigavel #sidebar { background: #fff; border-right: 4px solid #ffeef2; }
         .theme-amigavel #header { color: #ff4d7d; }
         .theme-amigavel .message { background: #fff; border: 3px solid #ffcada; color: #555; box-shadow: 4px 4px 0px #eee; }
         .theme-amigavel .my-message { background: #ff85a2; color: white; border-color: #ff4d7d; }
 
-        /* TEMA INFERNAL */
         .theme-nao-amigavel { background-color: #000; font-family: 'Share Tech Mono', monospace; }
         .theme-nao-amigavel #sidebar { border-right: 2px solid #ff0000; }
         .theme-nao-amigavel #header { color: #ff0000; text-shadow: 0 0 10px #ff0000; }
         .theme-nao-amigavel .message { background: #000; border: 1px solid #ff0000; color: #ff4444; box-shadow: 0 0 10px rgba(255,0,0,0.3); }
         .theme-nao-amigavel .my-message { color: white; border-color: #ff0000; box-shadow: 0 0 15px #ff0000; }
 
-        /* Input Area */
         #input-area { padding: 20px; display: flex; gap: 10px; z-index: 10; }
         input[type="text"] { flex: 1; padding: 12px; outline: none; border-radius: 8px; border: 2px solid #ddd; font-family: inherit; }
         .theme-nao-amigavel input[type="text"] { background: #000; border-color: #ff0000; color: #ff0000; }
@@ -75,10 +62,11 @@
     <div id="sidebar">
         <div class="bg-particles" id="sidebar-particles"></div>
         <div id="toggle-btn">❤️</div>
+        <div id="score-board">Corações: 0</div>
     </div>
     <div id="chat-container">
         <div class="bg-particles" id="chat-particles"></div>
-        <div id="header">AMIGÁVEL</div>
+        <div id="header">Modo Amigável</div>
         <div id="messages"></div>
         <div id="input-area">
             <label for="img-input">📷</label><input type="file" id="img-input" accept="image/*">
@@ -93,10 +81,56 @@
         const socket = io();
         let currentRoom = 'amigavel';
         const user = "User_" + Math.floor(Math.random() * 99);
-        const LIFE_TIME = 5 * 60 * 1000; // 5 minutos
-        let particleInterval; // Variável para controlar o intervalo das partículas
+        const LIFE_TIME = 5 * 60 * 1000;
+        let particleInterval;
 
-        // SALVAR MENSAGEM NO LOCALSTORAGE
+        // SISTEMA DE PONTOS
+        let scores = JSON.parse(localStorage.getItem('chat_scores') || '{"amigavel": 0, "infernal": 0}');
+
+        function updateScoreDisplay() {
+            const board = document.getElementById('score-board');
+            if (currentRoom === 'amigavel') {
+                board.innerText = `Corações: ${scores.amigavel}`;
+            } else {
+                board.innerText = `Almas: ${scores.infernal}`;
+            }
+            localStorage.setItem('chat_scores', JSON.stringify(scores));
+        }
+
+        function createParticle(containerId, emoji) {
+            const container = document.getElementById(containerId);
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.innerText = emoji;
+            p.style.left = Math.random() * 90 + '%';
+            p.style.fontSize = (Math.random() * 20 + 30) + 'px';
+            p.style.animation = `moveUp ${(Math.random() * 2 + 3)}s linear forwards`;
+            
+            p.onclick = function() {
+                // Ganha ponto ao estourar
+                if (currentRoom === 'amigavel') scores.amigavel++;
+                else scores.infernal++;
+                
+                updateScoreDisplay();
+                
+                this.innerText = currentRoom === 'amigavel' ? '💥' : '🔥';
+                this.style.transform = 'scale(1.5)';
+                setTimeout(() => this.remove(), 150);
+            };
+
+            container.appendChild(p);
+            setTimeout(() => { if(p) p.remove(); }, 4000);
+        }
+
+        function startParticleEffects(emoji) {
+            if (particleInterval) clearInterval(particleInterval);
+            particleInterval = setInterval(() => {
+                createParticle('sidebar-particles', emoji);
+                createParticle('chat-particles', emoji);
+            }, 600);
+        }
+
+        // PERSISTÊNCIA DE CHAT
         function saveMessage(msg) {
             let history = JSON.parse(localStorage.getItem('chat_history') || '[]');
             msg.timestamp = Date.now();
@@ -104,25 +138,12 @@
             localStorage.setItem('chat_history', JSON.stringify(history));
         }
 
-        // CARREGAR E FILTRAR MENSAGENS
         function renderChat() {
             const container = document.getElementById('messages');
-            container.innerHTML = ''; // Limpa tela
-            
+            container.innerHTML = '';
             let history = JSON.parse(localStorage.getItem('chat_history') || '[]');
             const now = Date.now();
-
-            // Filtragem: mesma sala E menos de 5 minutos
-            const validMessages = history.filter(msg => {
-                const isFromRoom = msg.room === currentRoom;
-                const isNotExpired = (now - msg.timestamp) < LIFE_TIME;
-                return isFromRoom && isNotExpired;
-            });
-
-            // Atualiza o storage removendo as expiradas de todas as salas
-            const globalValid = history.filter(msg => (now - msg.timestamp) < LIFE_TIME);
-            localStorage.setItem('chat_history', JSON.stringify(globalValid));
-
+            const validMessages = history.filter(msg => msg.room === currentRoom && (now - msg.timestamp) < LIFE_TIME);
             validMessages.forEach(displayMessage);
         }
 
@@ -140,15 +161,14 @@
             document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
         }
 
+        // ENVIO
         function sendMessage() {
             const input = document.getElementById('msg-input');
             if (input.value.trim()) {
-                const msg = { room: currentRoom, user: user, text: input.value };
-                socket.emit('chat message', msg);
+                socket.emit('chat message', { room: currentRoom, user: user, text: input.value });
                 input.value = '';
             }
         }
-
         document.getElementById('msg-input').onkeypress = (e) => { if(e.key === 'Enter') sendMessage(); };
         document.getElementById('send-btn').onclick = sendMessage;
 
@@ -157,54 +177,24 @@
             if (msg.room === currentRoom) displayMessage(msg);
         });
 
-        // --- Partículas Flutuantes e Clicáveis ---
-        function createParticle(containerId, emoji) {
-            const container = document.getElementById(containerId);
-            const p = document.createElement('div');
-            p.className = 'particle';
-            p.innerText = emoji;
-            p.style.left = Math.random() * 90 + '%';
-            p.style.fontSize = (Math.random() * 20 + 30) + 'px';
-            p.style.animation = `moveUp ${(Math.random() * 2 + 3)}s linear forwards`;
-            
-            p.onclick = function() {
-                this.innerText = currentRoom === 'amigavel' ? '💥' : '🔥'; // Efeito de explosão
-                this.style.transform = 'scale(1.5)';
-                this.style.opacity = '1';
-                setTimeout(() => this.remove(), 150);
-            };
-
-            container.appendChild(p);
-            setTimeout(() => { if(p) p.remove(); }, 4000); // Remove depois da animação
-        }
-
-        function startParticleEffects(emoji) {
-            if (particleInterval) clearInterval(particleInterval); // Limpa o intervalo anterior
-            particleInterval = setInterval(() => {
-                createParticle('sidebar-particles', emoji);
-                createParticle('chat-particles', emoji);
-            }, 600);
-        }
-        // --- Fim das Partículas ---
-
-
-        // TROCA DE CANAL
+        // TROCA DE MODO
         document.getElementById('toggle-btn').onclick = function() {
             if (currentRoom === 'amigavel') {
                 currentRoom = 'nao-amigavel';
                 document.body.className = 'theme-nao-amigavel';
                 this.innerText = '💀';
                 document.getElementById('header').innerText = 'MODO INFERNAL';
-                startParticleEffects('💀'); // Inicia caveiras
+                startParticleEffects('💀');
             } else {
                 currentRoom = 'amigavel';
                 document.body.className = 'theme-amigavel';
                 this.innerText = '❤️';
-                document.getElementById('header').innerText = 'AMIGÁVEL';
-                startParticleEffects('❤️'); // Inicia corações
+                document.getElementById('header').innerText = 'Modo Amigável';
+                startParticleEffects('❤️');
             }
             socket.emit('join room', currentRoom);
-            renderChat(); // Recarrega as mensagens da sala nova
+            updateScoreDisplay();
+            renderChat();
         };
 
         // ARQUIVOS
@@ -212,9 +202,7 @@
             const file = input.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = (e) => {
-                    socket.emit('chat message', { room: currentRoom, user: user, text: '', file: e.target.result, fileType: type });
-                };
+                reader.onload = (e) => socket.emit('chat message', { room: currentRoom, user: user, text: '', file: e.target.result, fileType: type });
                 reader.readAsDataURL(file);
                 input.value = '';
             }
@@ -222,12 +210,10 @@
         document.getElementById('img-input').onchange = function() { sendFile(this, 'image'); };
         document.getElementById('audio-input').onchange = function() { sendFile(this, 'audio'); };
 
-        // Timer de auto-limpeza a cada 15 segundos
-        setInterval(renderChat, 15000);
-
-        // Inicializar
+        // INIT
+        updateScoreDisplay();
         renderChat();
-        startParticleEffects('❤️'); // Começa com corações no modo amigável
+        startParticleEffects('❤️');
         socket.emit('join room', 'amigavel');
     </script>
 </body>
