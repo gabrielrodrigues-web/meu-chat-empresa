@@ -6,51 +6,53 @@
     <title>BIPOLAR - ELITE SYSTEM</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        :root { --main: #00ff44; --bg: #000; }
+        :root { --main: #ffb7ce; --bg: #ffffff; --text: #000; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', Courier, monospace; }
-        body { background: var(--bg); height: 100vh; overflow: hidden; color: white; transition: 0.5s; }
+        body { background: var(--bg); height: 100vh; overflow: hidden; color: var(--text); transition: 0.5s; }
 
         /* TELA DE LOGIN */
         #login-screen { position: fixed; inset: 0; background: #000; z-index: 2000; display: flex; align-items: center; justify-content: center; }
-        .login-box { border: 3px solid var(--main); padding: 40px; border-radius: 10px; text-align: center; background: #050505; width: 350px; box-shadow: 0 0 20px var(--main); }
-        input[type="text"] { width: 100%; padding: 15px; margin: 15px 0; background: #111; border: 1px solid var(--main); color: #fff; outline: none; }
+        .login-box { border: 3px solid #ff0055; padding: 40px; border-radius: 10px; text-align: center; background: #050505; width: 350px; box-shadow: 0 0 20px #ff0055; }
+        .login-box h1 { color: #ff0055; margin-bottom: 20px; }
+        input[type="text"] { width: 100%; padding: 15px; margin: 15px 0; background: #111; border: 1px solid #ff0055; color: #fff; outline: none; }
         
         /* APP PRINCIPAL */
         #main-app { display: none; height: 100vh; width: 100%; position: relative; }
 
-        /* CANVAS DE PARTÍCULAS (Minecraft Style) */
+        /* CANVAS DE PARTÍCULAS */
         #canvas-particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: auto; z-index: 1; }
 
         /* ÁREA CENTRAL */
         .stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 5; pointer-events: none; }
         .nav-bar { position: absolute; top: 20px; display: flex; gap: 10px; pointer-events: auto; }
-        .nav-btn { padding: 10px 20px; border: 2px solid var(--main); cursor: pointer; background: #000; color: #fff; font-weight: bold; }
-        .nav-btn.active { background: var(--main); color: #000; box-shadow: 0 0 15px var(--main); }
+        .nav-btn { padding: 10px 20px; border: 2px solid var(--main); cursor: pointer; background: var(--bg); color: var(--text); font-weight: bold; }
+        .nav-btn.active { background: var(--main); color: #fff; box-shadow: 0 0 15px var(--main); }
 
-        #big-icon { font-size: 150px; user-select: none; filter: drop-shadow(0 0 10px var(--main)); transition: 0.2s; image-rendering: pixelated; }
-        #score { font-size: 50px; font-weight: bold; color: var(--main); margin-top: 10px; }
+        #big-icon { font-size: 150px; user-select: none; filter: drop-shadow(0 0 10px var(--main)); transition: 0.2s; }
+        #score { font-size: 50px; font-weight: bold; color: var(--main); margin-top: 10px; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
 
         /* CHAT LATERAL */
         .chat-sidebar { 
-            width: 400px; background: rgba(0, 0, 0, 0.9); border-left: 2px solid var(--main); 
+            width: 400px; background: var(--bg); border-left: 3px solid var(--main); 
             display: flex; flex-direction: column; z-index: 10; position: relative;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.05);
         }
         #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { background: #0a0a0a; padding: 10px; border: 1px solid #333; font-size: 13px; border-left: 3px solid var(--main); overflow-wrap: break-word; }
+        .msg { background: rgba(0,0,0,0.03); padding: 10px; border: 1px solid rgba(0,0,0,0.1); font-size: 13px; border-left: 3px solid var(--main); color: var(--text); }
         .msg img { max-width: 100%; border-radius: 5px; margin-top: 5px; border: 1px solid var(--main); }
         
-        .input-area { padding: 15px; background: #050505; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #222; }
+        .input-area { padding: 15px; background: var(--bg); display: flex; flex-direction: column; gap: 10px; border-top: 1px solid rgba(0,0,0,0.1); }
         .controls { display: flex; gap: 5px; }
-        .controls button, .controls label { flex: 1; padding: 8px; font-size: 10px; background: #111; color: var(--main); border: 1px solid var(--main); cursor: pointer; text-align: center; }
-        #msg-in { padding: 10px; background: #111; border: 1px solid #333; color: #fff; outline: none; width: 100%; }
+        .controls button, .controls label { flex: 1; padding: 8px; font-size: 10px; background: var(--bg); color: var(--main); border: 1px solid var(--main); cursor: pointer; text-align: center; font-weight: bold; }
+        #msg-in { padding: 10px; background: rgba(0,0,0,0.02); border: 1px solid var(--main); color: var(--text); outline: none; width: 100%; }
     </style>
 </head>
 <body>
     <div id="login-screen">
         <div class="login-box">
-            <h1 id="brand" style="color:var(--main); margin-bottom:20px;">BIPOLAR</h1>
+            <h1>BIPOLAR</h1>
             <input type="text" id="nick" placeholder="NOME DE GUERRA...">
-            <button onclick="entrar()" style="width:100%; padding:15px; background:var(--main); color:#000; border:none; font-weight:bold; cursor:pointer;">ENTRAR NO SISTEMA</button>
+            <button onclick="entrar()" style="width:100%; padding:15px; background:#ff0055; color:#fff; border:none; font-weight:bold; cursor:pointer;">ACESSAR</button>
         </div>
     </div>
 
@@ -67,15 +69,15 @@
             </div>
 
             <div class="chat-sidebar">
-                <div style="padding:15px; text-align:center; border-bottom:1px solid #222; font-size:12px;">AUTODESTRUIÇÃO: 7 MINUTOS</div>
+                <div style="padding:15px; text-align:center; border-bottom:1px solid rgba(0,0,0,0.1); font-size:10px; font-weight:bold;">LIMPEZA AUTOMÁTICA: 7 MIN</div>
                 <div id="messages"></div>
                 <div class="input-area">
-                    <input type="text" id="msg-in" placeholder="Escreva aqui..." onkeypress="if(event.key==='Enter') enviar()">
+                    <input type="text" id="msg-in" placeholder="Mensagem..." onkeypress="if(event.key==='Enter') enviar()">
                     <div class="controls">
                         <button onclick="enviar()">ENVIAR</button>
-                        <label for="img-up">FOTO</label>
+                        <label for="img-up">IMAGEM</label>
                         <input type="file" id="img-up" accept="image/*" style="display:none" onchange="enviarImagem(this)">
-                        <button id="rec-btn" onmousedown="iniciarAudio()" onmouseup="pararAudio()">🎤 SEGURE</button>
+                        <button id="rec-btn" onmousedown="iniciarAudio()" onmouseup="pararAudio()">🎤 GRAVAR</button>
                     </div>
                 </div>
             </div>
@@ -84,20 +86,19 @@
 
     <script>
         const socket = io();
-        let user = "", sala = "sky", pontos = 0;
+        let user = "", sala = "sky";
+        let placar = { sky: 0, hell: 0 };
         const canvas = document.getElementById('canvas-particles');
         const ctx = canvas.getContext('2d');
         let particles = [];
-        let mediaRecorder;
-        let audioChunks = [];
+        let mediaRecorder, audioChunks = [];
 
         function entrar() {
             user = document.getElementById('nick').value;
-            if(!user) return alert("Identifique-se!");
+            if(!user) return alert("Digite seu nome!");
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-app').style.display = 'flex';
-            resize();
-            animate();
+            resize(); animate();
             socket.emit('join room', sala);
         }
 
@@ -105,61 +106,63 @@
             sala = m;
             const root = document.documentElement;
             if(m === 'sky') {
-                root.style.setProperty('--main', '#00e1ff');
+                root.style.setProperty('--main', '#ffb7ce'); // Rosa fraco neon
+                root.style.setProperty('--bg', '#ffffff');   // Fundo branco
+                root.style.setProperty('--text', '#000000'); // Texto preto
                 document.getElementById('big-icon').innerText = '💖';
-                document.body.style.background = "#000510";
             } else {
-                root.style.setProperty('--main', '#ff3300');
+                root.style.setProperty('--main', '#ff3300'); // Vermelho neon
+                root.style.setProperty('--bg', '#000000');   // Fundo preto
+                root.style.setProperty('--text', '#ffffff'); // Texto branco
                 document.getElementById('big-icon').innerText = '💀';
-                document.body.style.background = "#100000";
             }
             document.getElementById('btn-sky').classList.toggle('active', m === 'sky');
             document.getElementById('btn-hell').classList.toggle('active', m === 'hell');
+            document.getElementById('score').innerText = placar[sala];
+            document.getElementById('messages').innerHTML = ""; // Limpa tela ao trocar
             particles = [];
             socket.emit('join room', sala);
         }
 
-        // --- SISTEMA DE PARTÍCULAS ---
+        // --- PARTÍCULAS ---
         function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
         window.onresize = resize;
 
         class Particle {
             constructor() {
-                this.x = Math.random() * (canvas.width - 400); // Evita o chat
+                this.x = Math.random() * (canvas.width - 420);
                 this.y = canvas.height + 50;
-                this.size = 40;
                 this.speed = Math.random() * 2 + 1;
                 this.icon = sala === 'sky' ? '💖' : '💀';
             }
             update() { this.y -= this.speed; }
             draw() {
-                ctx.font = this.size + "px Arial";
+                ctx.font = "40px Arial";
                 ctx.fillText(this.icon, this.x, this.y);
             }
         }
 
         canvas.addEventListener('mousedown', (e) => {
             particles.forEach((p, i) => {
-                if(e.clientX > p.x && e.clientX < p.x + 40 && e.clientY > p.y - 40 && e.clientY < p.y) {
+                if(e.clientX > p.x && e.clientX < p.x + 45 && e.clientY > p.y - 40 && e.clientY < p.y + 10) {
                     particles.splice(i, 1);
-                    pontos++;
-                    document.getElementById('score').innerText = pontos;
+                    placar[sala]++;
+                    document.getElementById('score').innerText = placar[sala];
                 }
             });
         });
 
         function animate() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            if(Math.random() < 0.05) particles.push(new Particle());
+            if(Math.random() < 0.04) particles.push(new Particle());
             particles.forEach((p, i) => {
-                p.update();
-                p.draw();
+                p.update(); p.draw();
                 if(p.y < -50) particles.splice(i, 1);
             });
             requestAnimationFrame(animate);
         }
 
-        // --- COMUNICAÇÃO ---
+        // --- CHAT ---
         function enviar() {
             const i = document.getElementById('msg-in');
             if(!i.value) return;
@@ -170,26 +173,21 @@
         function enviarImagem(input) {
             const file = input.files[0];
             const reader = new FileReader();
-            reader.onload = (e) => {
-                socket.emit('chat message', { room: sala, user: user, img: e.target.result, type: 'img' });
-            };
+            reader.onload = (e) => socket.emit('chat message', { room: sala, user: user, img: e.target.result, type: 'img' });
             reader.readAsDataURL(file);
         }
 
         socket.on('chat message', (data) => {
+            if(data.room !== sala) return; // Segurança extra: ignora mensagens de outra sala
             const m = document.getElementById('messages');
-            const id = "msg-" + Date.now();
-            let content = data.type === 'img' ? `<img src="${data.img}">` : data.text;
+            const id = "m-" + Math.random().toString(36).substr(2, 9);
+            let content = data.text;
+            if(data.type === 'img') content = `<img src="${data.img}">`;
             if(data.type === 'audio') content = `<audio controls src="${data.audio}"></audio>`;
 
-            m.innerHTML += `<div class="msg" id="${id}"><b style="color:var(--main)">${data.user}:</b><br>${content}</div>`;
+            m.innerHTML += `<div class="msg" id="${id}"><b>${data.user}:</b><br>${content}</div>`;
             m.scrollTop = m.scrollHeight;
-
-            // Timer de 7 minutos (420000ms)
-            setTimeout(() => {
-                const el = document.getElementById(id);
-                if(el) el.remove();
-            }, 420000);
+            setTimeout(() => { document.getElementById(id)?.remove(); }, 420000); // 7 min
         });
 
         // --- ÁUDIO ---
@@ -205,12 +203,8 @@
                 audioChunks = [];
             };
             mediaRecorder.start();
-            document.getElementById('rec-btn').style.background = "red";
         }
-        function pararAudio() {
-            mediaRecorder.stop();
-            document.getElementById('rec-btn').style.background = "#111";
-        }
+        function pararAudio() { mediaRecorder?.stop(); }
     </script>
 </body>
 </html>
