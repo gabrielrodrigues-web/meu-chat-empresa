@@ -3,38 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dual Chat - Reality Switch</title>
+    <title>Dual Chat - Audio Edition</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; transition: background 0.4s, color 0.4s; }
-        
         body { display: flex; height: 100vh; overflow: hidden; position: relative; font-family: 'Comic Sans MS', cursive; }
 
-        /* --- EFEITO SHAKE --- */
-        @keyframes shake {
-            0% { transform: translate(0,0); }
-            25% { transform: translate(-10px, 5px); }
-            50% { transform: translate(10px, -5px); }
-            75% { transform: translate(-10px, -5px); }
-            100% { transform: translate(0,0); }
-        }
-        .shake-effect { animation: shake 0.3s ease-in-out; }
-
-        /* --- PARTÍCULAS DE FUNDO --- */
-        .particle {
-            position: absolute;
-            pointer-events: auto;
-            z-index: 1;
-            animation: rise 5s linear forwards;
-            user-select: none;
-            cursor: pointer;
-        }
-        @keyframes rise {
-            from { transform: translateY(110vh); opacity: 1; }
-            to { transform: translateY(-10vh); opacity: 0; }
-        }
-
-        /* --- TEMAS --- */
+        /* --- ESTÉTICA GERAL --- */
         body.fofo { background-color: #fff0f5; color: #ff69b4; }
         body.dark { background-color: #050000; color: #ff0000; font-family: 'Courier New', monospace; }
 
@@ -44,35 +19,26 @@
         #chat-panel { flex: 1.2; display: flex; flex-direction: column; z-index: 5; background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(8px); }
         .dark #chat-panel { background: rgba(0, 0, 0, 0.92); }
 
-        header { padding: 20px; text-align: center; font-weight: bold; font-size: 1.4em; border-bottom: 1px solid rgba(0,0,0,0.1); }
-        .dark header { border-bottom: 1px solid #440000; text-shadow: 0 0 10px #ff0000; }
-
-        /* --- SISTEMA DE CHATS SEPARADOS --- */
+        /* --- CHATS E MENSAGENS --- */
         .chat-container { flex: 1; overflow-y: auto; padding: 20px; display: none; flex-direction: column; gap: 12px; }
         .active-chat { display: flex; }
 
         .message { max-width: 85%; padding: 12px; font-size: 14px; animation: fadeIn 0.3s forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .fofo .msg-me { background: #ffb6c1; align-self: flex-end; border-radius: 15px 15px 0 15px; }
+        .dark .msg-me { background: #300000; align-self: flex-end; border: 1px solid #ff0000; }
+        
+        audio { max-width: 100%; margin-top: 5px; height: 35px; }
 
-        /* Mensagens Fofas */
-        .fofo .msg-me { background: #ffb6c1; color: white; align-self: flex-end; border-radius: 15px 15px 0 15px; }
-        .fofo .msg-others { background: white; border: 1px solid #ffb6c1; align-self: flex-start; border-radius: 15px 15px 15px 0; }
+        /* --- BOTÃO DE GRAVAR --- */
+        #input-area { padding: 20px; display: flex; gap: 10px; border-top: 1px solid rgba(0,0,0,0.1); align-items: center; }
+        .btn-audio { border: none; width: 60px; height: 60px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; transition: 0.2s; }
+        .fofo .btn-audio { background: #ff69b4; color: white; border-radius: 50%; box-shadow: 0 4px 10px rgba(255,105,180,0.3); }
+        .dark .btn-audio { background: #660000; color: white; border-radius: 0; box-shadow: 0 0 15px #ff0000; }
+        
+        .recording { background: #ff0000 !important; animation: pulse 1s infinite; transform: scale(1.1); }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255,0,0,0.7); } 70% { box-shadow: 0 0 0 20px rgba(255,0,0,0); } 100% { box-shadow: 0 0 0 0 rgba(255,0,0,0); } }
 
-        /* Mensagens Nada Amigáveis */
-        .dark .msg-me { background: #300000; color: #ff0000; align-self: flex-end; border: 1px solid #ff0000; }
-        .dark .msg-others { background: #111; color: #666; align-self: flex-start; border-left: 3px solid #444; }
-
-        /* Input Area */
-        #input-area { padding: 20px; display: flex; gap: 10px; border-top: 1px solid rgba(0,0,0,0.1); }
-        .dark #input-area { border-top: 1px solid #440000; }
-        input { flex: 1; padding: 12px; border-radius: 20px; border: 1px solid #ccc; outline: none; font-family: inherit; }
-        .dark input { background: #000; border: 1px solid #440000; color: #ff0000; border-radius: 0; }
-        button { border: none; padding: 0 25px; font-weight: bold; cursor: pointer; border-radius: 20px; background: #ff69b4; color: white; font-family: inherit; }
-        .dark button { background: #660000; color: white; border-radius: 0; }
-
-        /* Botão Mestre */
-        #toggle-btn { font-size: 110px; cursor: pointer; z-index: 10; animation: float 3s ease-in-out infinite; user-select: none; }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+        #toggle-btn { font-size: 110px; cursor: pointer; z-index: 10; user-select: none; }
     </style>
 </head>
 <body class="fofo">
@@ -82,108 +48,104 @@
     </div>
 
     <div id="chat-panel">
-        <header id="main-header">Conversas Amigáveis</header>
-        
+        <header style="padding: 20px; text-align: center; font-weight: bold;" id="main-header">Conversas Amigáveis</header>
         <div id="messages-fofo" class="chat-container active-chat"></div>
-        
         <div id="messages-dark" class="chat-container"></div>
 
-        <form id="input-area">
-            <input id="m" autocomplete="off" placeholder="Diga algo fofo..." />
-            <button>ENVIAR</button>
-        </form>
+        <div id="input-area">
+            <button id="record-btn" class="btn-audio">🎤</button>
+            <p id="record-status" style="font-size: 12px;">Segure para gravar</p>
+        </div>
     </div>
 
     <script>
         const socket = io();
-        const userNumber = Math.floor(Math.random() * 999) + 1;
         const body = document.body;
-        const toggleBtn = document.getElementById('toggle-btn');
-        const header = document.getElementById('main-header');
-        const inputField = document.getElementById('m');
+        const recordBtn = document.getElementById('record-btn');
+        let mediaRecorder;
+        let audioChunks = [];
 
-        // --- Gerador de Partículas (Estrelas ou Balões) ---
-        function createParticle() {
-            const isFofo = body.classList.contains('fofo');
-            const p = document.createElement('div');
-            p.className = 'particle';
-            p.innerText = isFofo ? '✨' : '🎈';
-            p.style.left = Math.random() * 100 + 'vw';
-            p.style.fontSize = (Math.random() * 20 + 15) + 'px';
-            p.style.animationDuration = (Math.random() * 2 + 3) + 's';
-            
-            p.onmouseover = () => {
-                p.innerText = isFofo ? '💥' : '🩸';
-                setTimeout(() => p.remove(), 250);
+        // --- LÓGICA DE GRAVAÇÃO DE ÁUDIO ---
+        navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+            mediaRecorder = new MediaRecorder(stream);
+
+            mediaRecorder.ondataavailable = event => {
+                audioChunks.push(event.data);
             };
 
-            document.body.appendChild(p);
-            setTimeout(() => { if(p.parentNode) p.remove(); }, 5000);
-        }
-        setInterval(createParticle, 250);
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                const reader = new FileReader();
+                reader.readAsDataURL(audioBlob); 
+                reader.onloadend = () => {
+                    const base64String = reader.result;
+                    const mode = body.classList.contains('fofo') ? 'fofo' : 'dark';
+                    
+                    // Envia o áudio via socket
+                    socket.emit('chat message', {
+                        user: "Usuário " + Math.floor(Math.random() * 999),
+                        audio: base64String,
+                        mode: mode
+                    });
+                };
+                audioChunks = [];
+            };
+        });
 
-        // --- Troca de Realidade ---
-        toggleBtn.addEventListener('click', () => {
-            body.classList.add('shake-effect');
-            setTimeout(() => body.classList.remove('shake-effect'), 300);
+        recordBtn.addEventListener('mousedown', () => {
+            if (mediaRecorder) {
+                mediaRecorder.start();
+                recordBtn.classList.add('recording');
+                document.getElementById('record-status').innerText = "Gravando...";
+            }
+        });
 
+        recordBtn.addEventListener('mouseup', () => {
+            if (mediaRecorder) {
+                mediaRecorder.stop();
+                recordBtn.classList.remove('recording');
+                document.getElementById('record-status').innerText = "Enviado!";
+                setTimeout(() => document.getElementById('record-status').innerText = "Segure para gravar", 2000);
+            }
+        });
+
+        // --- RECEBER ÁUDIO ---
+        socket.on('chat message', (msg) => {
+            const item = document.createElement('div');
+            item.className = 'message msg-others'; // Simplificado para o exemplo
+            item.innerHTML = `<strong>${msg.user}:</strong><br>`;
+            
+            const audio = document.createElement('audio');
+            audio.controls = true;
+            audio.src = msg.audio;
+            item.appendChild(audio);
+
+            const targetChat = msg.mode === 'fofo' ? document.getElementById('messages-fofo') : document.getElementById('messages-dark');
+            targetChat.appendChild(item);
+            targetChat.scrollTop = targetChat.scrollHeight;
+
+            // Autodestruição em 5 minutos
+            setTimeout(() => item.remove(), 300000);
+        });
+
+        // --- TROCA DE TEMA (Simplificada) ---
+        document.getElementById('toggle-btn').addEventListener('click', () => {
             const chatFofo = document.getElementById('messages-fofo');
             const chatDark = document.getElementById('messages-dark');
-
             if (body.classList.contains('fofo')) {
                 body.className = 'dark';
-                toggleBtn.innerText = '🎈';
-                header.innerText = 'Conversas Nada Amigáveis';
-                inputField.placeholder = "O que você quer?";
+                document.getElementById('toggle-btn').innerText = '🎈';
                 chatFofo.classList.remove('active-chat');
                 chatDark.classList.add('active-chat');
             } else {
                 body.className = 'fofo';
-                toggleBtn.innerText = '⭐';
-                header.innerText = 'Conversas Amigáveis';
-                inputField.placeholder = "Diga algo fofo...";
+                document.getElementById('toggle-btn').innerText = '⭐';
                 chatDark.classList.remove('active-chat');
                 chatFofo.classList.add('active-chat');
             }
         });
-
-        // --- Envio de Mensagem ---
-        document.getElementById('input-area').onsubmit = (e) => {
-            e.preventDefault();
-            if (inputField.value.trim()) {
-                const currentMode = body.classList.contains('fofo') ? 'fofo' : 'dark';
-                socket.emit('chat message', {
-                    id: socket.id,
-                    user: "Usuário " + userNumber,
-                    text: inputField.value,
-                    mode: currentMode
-                });
-                inputField.value = '';
-            }
-        };
-
-        // --- Recebimento de Mensagem ---
-        socket.on('chat message', (msg) => {
-            const item = document.createElement('div');
-            const isMe = msg.id === socket.id;
-            item.className = isMe ? 'message msg-me' : 'message msg-others';
-            item.innerHTML = `<strong>${msg.user}:</strong> ${msg.text}`;
-
-            // Direciona a mensagem para o chat correto baseado no modo que foi enviada
-            const targetChat = msg.mode === 'fofo' 
-                ? document.getElementById('messages-fofo') 
-                : document.getElementById('messages-dark');
-            
-            targetChat.appendChild(item);
-            targetChat.scrollTop = targetChat.scrollHeight;
-
-            // Auto-delete (60s)
-            setTimeout(() => {
-                item.style.opacity = '0';
-                setTimeout(() => item.remove(), 1000);
-            }, 60000);
-        });
     </script>
 </body>
 </html>
+
 
