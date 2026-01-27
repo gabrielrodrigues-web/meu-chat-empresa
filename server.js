@@ -1,21 +1,19 @@
 const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
-const io = require('socket.io')(http, { 
-    cors: { origin: "*" },
-    maxHttpBufferSize: 1e7 
+const io = require('socket.io')(http, {
+    cors: { origin: "*" }
 });
 
-// CORREÇÃO: Define a pasta principal como local dos arquivos
+// CORREÇÃO: Define a pasta raiz como local dos arquivos (sem /public)
 app.use(express.static(__dirname));
 
-// Garante que o index.html seja entregue corretamente
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
 });
 
 io.on('connection', (socket) => {
-    console.log('Usuário conectado ao Socket.io');
+    console.log('Usuário conectado');
 
     socket.on('join room', (room) => {
         socket.leaveAll();
@@ -24,7 +22,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('chat message', (msg) => {
-        // Envia para todos na sala específica
+        // Envia a mensagem apenas para a sala específica
         io.to(msg.room).emit('chat message', msg);
     });
 
@@ -33,8 +31,7 @@ io.on('connection', (socket) => {
     });
 });
 
-// Porta dinâmica para o Render (10000) ou local (3000)
 const PORT = process.env.PORT || 10000;
 http.listen(PORT, () => {
-    console.log('SERVIDOR ELITE RODANDO NA PORTA ' + PORT);
+    console.log('SERVIDOR RODANDO NA PORTA ' + PORT);
 });
