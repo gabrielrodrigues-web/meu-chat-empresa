@@ -3,82 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bipolar Chat</title>
+    <title>Bipolar Chat - Original</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <style>
+        /* ESTILO DA TELA DE LOGIN */
         body {
             background-color: #0d0208;
-            background-image: radial-gradient(circle, #1a0510 0%, #0d0208 100%);
             color: #fff;
-            font-family: Arial, sans-serif;
-            display: flex; align-items: center; justify-content: center;
-            height: 100vh; margin: 0; overflow: hidden;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        #login-container, #chat-container {
-            background: rgba(15, 0, 8, 0.95);
-            padding: 40px; border-radius: 20px;
+        #login-screen {
+            background: rgba(20, 0, 10, 0.95);
+            padding: 40px;
+            border-radius: 20px;
             border: 2px solid #ff0055;
-            box-shadow: 0 0 25px rgba(255, 0, 85, 0.5);
-            text-align: center; width: 380px;
+            box-shadow: 0 0 20px #ff0055;
+            text-align: center;
+            z-index: 100;
         }
 
-        h1 {
-            font-size: 2.5rem; text-transform: uppercase;
-            text-shadow: 0 0 10px #ff0055, 0 0 20px #ff0000;
-            margin-bottom: 30px; letter-spacing: 3px;
+        /* INTERFACE DO CHAT (SÓ APARECE APÓS LOGIN) */
+        #main-interface {
+            display: none; /* Escondido no início */
+            width: 100vw;
+            height: 100vh;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* SEUS CORAÇÕES FLUTUANTES */
+        .floating {
+            position: absolute;
+            font-size: 20px;
+            animation: float 5s infinite ease-in-out;
+            opacity: 0.6;
+            z-index: 1;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+        }
+
+        .chat-box {
+            width: 400px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #ff0055;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px #ff0055;
+            z-index: 10;
+        }
+
+        .channels {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 15px;
+        }
+
+        .channel-btn {
+            background: #220011;
+            color: #ff0055;
+            border: 1px solid #ff0055;
+            padding: 8px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .channel-btn.active {
+            background: #ff0055;
+            color: #fff;
+            box-shadow: 0 0 10px #ff0055;
+        }
+
+        #messages {
+            height: 300px;
+            overflow-y: auto;
+            border-bottom: 1px solid #333;
+            margin-bottom: 10px;
+            padding: 10px;
         }
 
         input {
-            width: 100%; padding: 15px; margin: 10px 0;
-            background: #000; border: 1px solid #ff0055;
-            color: #ff0055; border-radius: 8px; outline: none;
-            box-sizing: border-box;
+            width: 80%;
+            padding: 10px;
+            background: #111;
+            border: 1px solid #ff0055;
+            color: #fff;
+            border-radius: 5px;
         }
 
-        button {
-            width: 100%; padding: 15px; background: #44001a;
-            color: #fff; border: 1px solid #ff0055; border-radius: 8px;
-            cursor: pointer; font-weight: bold; margin-top: 10px;
-            text-shadow: 0 0 5px #ff0055;
+        button.send-btn {
+            padding: 10px;
+            background: #ff0055;
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
         }
 
-        button:hover { background: #ff0055; box-shadow: 0 0 15px #ff0055; }
-
-        #messages {
-            height: 300px; overflow-y: auto; background: #050002;
-            border-radius: 10px; padding: 15px; margin-bottom: 15px;
-            text-align: left; border: 1px solid #222;
-        }
-
-        .msg { margin-bottom: 10px; padding: 8px; background: rgba(255, 255, 255, 0.05); border-radius: 5px; }
-        .user-name { color: #ff0055; font-weight: bold; font-size: 0.8rem; display: block; }
         .hidden { display: none !important; }
-        #error-msg { color: #ff4444; font-size: 0.8rem; margin-top: 10px; height: 20px; }
     </style>
 </head>
 <body>
 
-    <div id="login-container">
-        <h1>Bipolar Chat</h1>
-        <input type="email" id="email" placeholder="Seu e-mail">
-        <input type="password" id="password" placeholder="Sua senha (mínimo 6 dígitos)">
-        <button onclick="logar()">ENTRAR / REGISTRAR</button>
-        <div id="error-msg"></div>
+    <div id="login-screen">
+        <h1 style="color: #ff0055; text-shadow: 0 0 10px #ff0055;">BIPOLAR LOGIN</h1>
+        <input type="text" id="user-input" placeholder="Usuário" style="width: 100%; margin-bottom: 10px;"><br>
+        <input type="password" id="pass-input" placeholder="Senha (6 dígitos)" style="width: 100%; margin-bottom: 10px;"><br>
+        <button onclick="logar()" style="width: 100%; padding: 10px; background: #ff0055; color: white; border: none; cursor: pointer; border-radius: 5px;">ENTRAR</button>
+        <p id="error" style="color: red; font-size: 12px; margin-top: 10px;"></p>
     </div>
 
-    <div id="chat-container" class="hidden">
-        <h1>Bipolar Chat</h1>
-        <div id="messages"></div>
-        <input type="text" id="msgInput" placeholder="Sua mensagem...">
-        <button onclick="enviar()">ENVIAR</button>
-        <button onclick="auth.signOut()" style="background:#111; border:none; font-size:10px;">SAIR</button>
+    <div id="main-interface">
+        <h1 id="chat-title">💖 CANAL 1: AMOR 💖</h1>
+        
+        <div class="channels">
+            <button class="channel-btn active" onclick="switchChannel('canal1')">CANAL 1 💖</button>
+            <button class="channel-btn" onclick="switchChannel('canal2')">CANAL 2 💀</button>
+        </div>
+
+        <div class="chat-box">
+            <div id="messages"></div>
+            <div style="display: flex; gap: 5px;">
+                <input type="text" id="msg-input" placeholder="Sua mensagem...">
+                <button class="send-btn" onclick="enviar()">ENVIAR</button>
+            </div>
+        </div>
+        
+        <button onclick="auth.signOut()" style="margin-top: 20px; background: none; border: 1px solid #333; color: #555; cursor: pointer;">SAIR</button>
     </div>
 
     <script>
-        // Suas chaves
         const firebaseConfig = {
             apiKey: "AIzaSyD7GIQgMVr0lf4BOyQkXBh_Qhk-GK6wMK4",
             authDomain: "chat2000-5815b.firebaseapp.com",
@@ -88,75 +157,89 @@
             messagingSenderId: "88820669466",
             appId: "1:88820669466:web:df968acfebc5bd31ec85a3"
         };
-
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.database();
 
-        // Atalho Tecla Enter
-        document.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                const logVisivel = !document.getElementById('login-container').classList.contains('hidden');
-                logVisivel ? logar() : enviar();
-            }
-        });
+        let currentChannel = 'canal1';
 
+        // GERADOR DE EFEITOS (Corações/Caveiras)
+        function createEffect(emoji) {
+            const el = document.createElement('div');
+            el.className = 'floating';
+            el.innerHTML = emoji;
+            el.style.left = Math.random() * 100 + 'vw';
+            el.style.animationDuration = (Math.random() * 3 + 2) + 's';
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 5000);
+        }
+
+        setInterval(() => {
+            if(!document.getElementById('main-interface').classList.contains('hidden')){
+                createEffect(currentChannel === 'canal1' ? '💖' : '💀');
+            }
+        }, 500);
+
+        // LOGIN
         function logar() {
-            const e = document.getElementById('email').value;
-            const p = document.getElementById('password').value;
-            const err = document.getElementById('error-msg');
+            const u = document.getElementById('user-input').value;
+            const p = document.getElementById('pass-input').value;
+            if(!u || p.length < 6) return document.getElementById('error').innerText = "Senha curta!";
             
-            if(!e || p.length < 6) {
-                err.innerText = "E-mail vazio ou senha menor que 6!";
-                return;
-            }
-
-            err.innerText = "Tentando entrar...";
-            
-            // Tenta logar. Se não existir, tenta criar.
-            auth.signInWithEmailAndPassword(e, p).catch((error) => {
-                if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-login-credentials') {
-                    err.innerText = "Criando conta nova...";
-                    return auth.createUserWithEmailAndPassword(e, p).catch(err2 => err.innerText = err2.message);
-                }
-                err.innerText = error.message;
-            });
+            const email = u.trim().toLowerCase() + "@chat.com";
+            auth.signInWithEmailAndPassword(email, p).catch(() => auth.createUserWithEmailAndPassword(email, p));
         }
 
         auth.onAuthStateChanged(user => {
             if (user) {
-                document.getElementById('login-container').classList.add('hidden');
-                document.getElementById('chat-container').classList.remove('hidden');
-                carregar();
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('main-interface').style.display = 'flex';
+                loadMessages();
             } else {
-                document.getElementById('login-container').classList.remove('hidden');
-                document.getElementById('chat-container').classList.add('hidden');
+                document.getElementById('login-screen').style.display = 'block';
+                document.getElementById('main-interface').style.display = 'none';
             }
         });
 
+        // CHAT LOGIC
+        function switchChannel(ch) {
+            currentChannel = ch;
+            document.querySelectorAll('.channel-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('chat-title').innerHTML = ch === 'canal1' ? '💖 CANAL 1: AMOR 💖' : '💀 CANAL 2: CAOS 💀';
+            document.getElementById('chat-title').style.color = ch === 'canal1' ? '#ff0055' : '#ffffff';
+            loadMessages();
+        }
+
         function enviar() {
-            const txt = document.getElementById('msgInput').value;
-            if (txt.trim()) {
-                db.ref("messages").push({
+            const txt = document.getElementById('msg-input').value;
+            if(txt.trim()){
+                db.ref("messages/" + currentChannel).push({
                     user: auth.currentUser.email.split('@')[0],
                     text: txt
                 });
-                document.getElementById('msgInput').value = "";
+                document.getElementById('msg-input').value = "";
             }
         }
 
-        function carregar() {
+        function loadMessages() {
             const box = document.getElementById("messages");
             box.innerHTML = "";
-            db.ref("messages").limitToLast(50).on("child_added", snap => {
+            db.ref("messages/" + currentChannel).off();
+            db.ref("messages/" + currentChannel).limitToLast(20).on("child_added", snap => {
                 const d = snap.val();
-                const div = document.createElement("div");
-                div.className = "msg";
-                div.innerHTML = `<span class="user-name">${d.user}:</span> ${d.text}`;
-                box.appendChild(div);
+                box.innerHTML += `<div><b style="color:#ff0055">${d.user}:</b> ${d.text}</div>`;
                 box.scrollTop = box.scrollHeight;
             });
         }
+
+        // ENTER KEY
+        document.addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') {
+                if(document.getElementById('main-interface').style.display === 'flex') enviar();
+                else logar();
+            }
+        });
     </script>
 </body>
 </html>
