@@ -12,99 +12,73 @@
             background-color: #0d0208;
             background-image: radial-gradient(circle, #1a0510 0%, #0d0208 100%);
             color: #fff;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            overflow: hidden;
+            font-family: Arial, sans-serif;
+            display: flex; align-items: center; justify-content: center;
+            height: 100vh; margin: 0; overflow: hidden;
         }
 
         #login-container, #chat-container {
             background: rgba(15, 0, 8, 0.95);
-            padding: 40px;
-            border-radius: 20px;
+            padding: 40px; border-radius: 20px;
             border: 2px solid #ff0055;
             box-shadow: 0 0 25px rgba(255, 0, 85, 0.5);
-            text-align: center;
-            width: 380px;
+            text-align: center; width: 380px;
         }
 
         h1 {
-            font-size: 2.5rem;
-            text-transform: uppercase;
+            font-size: 2.5rem; text-transform: uppercase;
             text-shadow: 0 0 10px #ff0055, 0 0 20px #ff0000;
-            margin-bottom: 30px;
-            letter-spacing: 3px;
+            margin-bottom: 30px; letter-spacing: 3px;
         }
 
         input {
-            width: 100%;
-            padding: 15px;
-            margin: 10px 0;
-            background: #000;
-            border: 1px solid #ff0055;
-            color: #ff0055;
-            border-radius: 8px;
-            outline: none;
+            width: 100%; padding: 15px; margin: 10px 0;
+            background: #000; border: 1px solid #ff0055;
+            color: #ff0055; border-radius: 8px; outline: none;
             box-sizing: border-box;
         }
 
         button {
-            width: 100%;
-            padding: 15px;
-            background: #44001a;
-            color: #fff;
-            border: 1px solid #ff0055;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
+            width: 100%; padding: 15px; background: #44001a;
+            color: #fff; border: 1px solid #ff0055; border-radius: 8px;
+            cursor: pointer; font-weight: bold; margin-top: 10px;
             text-shadow: 0 0 5px #ff0055;
-            margin-top: 10px;
         }
 
         button:hover { background: #ff0055; box-shadow: 0 0 15px #ff0055; }
 
         #messages {
-            height: 300px;
-            overflow-y: auto;
-            background: #050002;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-            text-align: left;
-            border: 1px solid #222;
+            height: 300px; overflow-y: auto; background: #050002;
+            border-radius: 10px; padding: 15px; margin-bottom: 15px;
+            text-align: left; border: 1px solid #222;
         }
 
         .msg { margin-bottom: 10px; padding: 8px; background: rgba(255, 255, 255, 0.05); border-radius: 5px; }
         .user-name { color: #ff0055; font-weight: bold; font-size: 0.8rem; display: block; }
         .hidden { display: none !important; }
-        
-        /* Estilo para erros */
-        #error-msg { color: #ff0000; font-size: 0.8rem; margin-top: 10px; height: 20px; }
+        #error-msg { color: #ff4444; font-size: 0.8rem; margin-top: 10px; height: 20px; }
     </style>
 </head>
 <body>
 
     <div id="login-container">
         <h1>Bipolar Chat</h1>
-        <input type="email" id="email" placeholder="E-mail (ex: teste@gmail.com)">
-        <input type="password" id="password" placeholder="Senha (mínimo 6 dígitos)">
-        <button onclick="login()">ENTRAR / REGISTRAR</button>
+        <input type="email" id="email" placeholder="Seu e-mail">
+        <input type="password" id="password" placeholder="Sua senha (mínimo 6 dígitos)">
+        <button onclick="logar()">ENTRAR / REGISTRAR</button>
         <div id="error-msg"></div>
     </div>
 
     <div id="chat-container" class="hidden">
         <h1>Bipolar Chat</h1>
         <div id="messages"></div>
-        <input type="text" id="messageInput" placeholder="Mensagem...">
-        <button onclick="sendMessage()">ENVIAR</button>
-        <button onclick="logout()" style="background: #111; border:none; font-size: 0.7rem;">SAIR</button>
+        <input type="text" id="msgInput" placeholder="Sua mensagem...">
+        <button onclick="enviar()">ENVIAR</button>
+        <button onclick="auth.signOut()" style="background:#111; border:none; font-size:10px;">SAIR</button>
     </div>
 
     <script>
-        // CONFIGURAÇÃO DO SEU FIREBASE
+        // Suas chaves
         const firebaseConfig = {
             apiKey: "AIzaSyD7GIQgMVr0lf4BOyQkXBh_Qhk-GK6wMK4",
             authDomain: "chat2000-5815b.firebaseapp.com",
@@ -119,25 +93,33 @@
         const auth = firebase.auth();
         const db = firebase.database();
 
-        // ATALHO ENTER
+        // Atalho Tecla Enter
         document.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                const isLogin = !document.getElementById('login-container').classList.contains('hidden');
-                isLogin ? login() : sendMessage();
+                const logVisivel = !document.getElementById('login-container').classList.contains('hidden');
+                logVisivel ? logar() : enviar();
             }
         });
 
-        function login() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const errorDiv = document.getElementById('error-msg');
-            errorDiv.innerText = "Carregando...";
+        function logar() {
+            const e = document.getElementById('email').value;
+            const p = document.getElementById('password').value;
+            const err = document.getElementById('error-msg');
+            
+            if(!e || p.length < 6) {
+                err.innerText = "E-mail vazio ou senha menor que 6!";
+                return;
+            }
 
-            auth.signInWithEmailAndPassword(email, password).catch((error) => {
-                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-                    return auth.createUserWithEmailAndPassword(email, password);
+            err.innerText = "Tentando entrar...";
+            
+            // Tenta logar. Se não existir, tenta criar.
+            auth.signInWithEmailAndPassword(e, p).catch((error) => {
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-login-credentials') {
+                    err.innerText = "Criando conta nova...";
+                    return auth.createUserWithEmailAndPassword(e, p).catch(err2 => err.innerText = err2.message);
                 }
-                errorDiv.innerText = "Erro: " + error.message;
+                err.innerText = error.message;
             });
         }
 
@@ -145,39 +127,36 @@
             if (user) {
                 document.getElementById('login-container').classList.add('hidden');
                 document.getElementById('chat-container').classList.remove('hidden');
-                loadMessages();
+                carregar();
             } else {
                 document.getElementById('login-container').classList.remove('hidden');
                 document.getElementById('chat-container').classList.add('hidden');
             }
         });
 
-        function sendMessage() {
-            const text = document.getElementById('messageInput').value;
-            if (text.trim()) {
+        function enviar() {
+            const txt = document.getElementById('msgInput').value;
+            if (txt.trim()) {
                 db.ref("messages").push({
                     user: auth.currentUser.email.split('@')[0],
-                    text: text
+                    text: txt
                 });
-                document.getElementById('messageInput').value = "";
+                document.getElementById('msgInput').value = "";
             }
         }
 
-        function loadMessages() {
-            const msgDiv = document.getElementById("messages");
-            msgDiv.innerHTML = ""; 
-            db.ref("messages").off();
-            db.ref("messages").limitToLast(50).on("child_added", snapshot => {
-                const data = snapshot.val();
+        function carregar() {
+            const box = document.getElementById("messages");
+            box.innerHTML = "";
+            db.ref("messages").limitToLast(50).on("child_added", snap => {
+                const d = snap.val();
                 const div = document.createElement("div");
                 div.className = "msg";
-                div.innerHTML = `<span class="user-name">${data.user}:</span> ${data.text}`;
-                msgDiv.appendChild(div);
-                msgDiv.scrollTop = msgDiv.scrollHeight;
+                div.innerHTML = `<span class="user-name">${d.user}:</span> ${d.text}`;
+                box.appendChild(div);
+                box.scrollTop = box.scrollHeight;
             });
         }
-
-        function logout() { auth.signOut(); }
     </script>
 </body>
 </html>
