@@ -3,97 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BIPOLAR CHAT - ELITE</title>
+    <title>BIPOLAR - ELITE EDITION</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-storage-compat.js"></script>
     <style>
-        :root { --main-color: #ff0055; --bg-gradient: radial-gradient(circle, #fff 0%, #ffcbd5 100%); }
-        * { box-sizing: border-box; cursor: crosshair; }
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; overflow: hidden; background: #000; transition: background 0.5s; }
+        :root { --cor-main: #ff0055; --bg-dinamico: radial-gradient(circle, #fff 0%, #ffcbd5 100%); }
+        * { box-sizing: border-box; cursor: crosshair; transition: all 0.3s ease; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; background: #000; }
 
-        /* EFEITO SHAKE */
-        .shake { animation: shakeAnim 0.4s cubic-bezier(.36,.07,.19,.97) both; }
-        @keyframes shakeAnim { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
-
-        /* LOGIN */
-        #login-screen { position: fixed; inset: 0; background: #000; z-index: 2000; display: flex; align-items: center; justify-content: center; }
-        .login-box { border: 2px solid var(--main-color); padding: 40px; border-radius: 30px; text-align: center; background: #050505; box-shadow: 0 0 50px var(--main-color); width: 380px; }
-        .login-box h1 { color: #fff; text-shadow: 0 0 15px var(--main-color); margin-bottom: 30px; letter-spacing: 5px; }
-        input { width: 100%; padding: 15px; margin: 12px 0; background: #000; border: 1px solid var(--main-color); color: #fff; border-radius: 12px; font-size: 16px; }
-
-        /* APP LAYOUT */
-        #main-app { display: none; height: 100vh; position: relative; background: var(--bg-gradient); }
-        .center-stage { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
-        
-        .giant-icon { font-size: 220px; filter: drop-shadow(0 0 30px var(--main-color)); transition: 0.5s; user-select: none; pointer-events: auto; }
-        .giant-icon:active { transform: scale(0.9); }
-
-        .score-board { font-size: 80px; font-weight: 900; color: var(--main-color); text-shadow: 0 0 20px rgba(0,0,0,0.2); margin-top: -20px; z-index: 5; }
-
-        /* CHAT LATERAL ELITE */
-        .chat-sidebar {
-            position: absolute; right: 30px; top: 10%; bottom: 10%; width: 420px;
-            background: rgba(0, 0, 0, 0.85); border: 2px solid var(--main-color);
-            border-radius: 30px; display: flex; flex-direction: column; z-index: 100;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5); backdrop-filter: blur(10px);
+        /* EFEITO DE TREMIDA AO MUDAR CANAL */
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            20% { transform: translate(-3px, 0px) rotate(-1deg); }
+            40% { transform: translate(3px, 2px) rotate(1deg); }
+            60% { transform: translate(-1px, -1px) rotate(0deg); }
+            100% { transform: translate(1px, 1px) rotate(0deg); }
         }
-        #msg-box { flex: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
-        .msg { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border-left: 4px solid var(--main-color); animation: slideIn 0.3s ease; position: relative; }
-        @keyframes slideIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
-        
-        .msg-user { font-weight: bold; font-size: 13px; color: var(--main-color); margin-bottom: 5px; display: block; }
-        .msg-text { color: #fff; font-size: 15px; line-height: 1.4; }
+        .shake-effect { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
 
-        /* CONTROLES */
-        .controls { position: fixed; top: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 20px; z-index: 500; }
-        .btn-mode { padding: 15px 35px; border-radius: 50px; border: 2px solid var(--main-color); background: #000; color: var(--main-color); font-weight: bold; transition: 0.3s; }
-        .btn-mode.active { background: var(--main-color); color: #fff; box-shadow: 0 0 30px var(--main-color); }
+        /* TELA DE LOGIN */
+        #login-screen { position: fixed; inset: 0; background: #000; z-index: 2000; display: flex; align-items: center; justify-content: center; }
+        .login-box { border: 2px solid var(--cor-main); padding: 50px; border-radius: 30px; text-align: center; background: #050505; box-shadow: 0 0 60px var(--cor-main); width: 400px; }
+        .login-box h1 { color: #fff; text-shadow: 0 0 20px var(--cor-main); letter-spacing: 8px; margin-bottom: 30px; }
+        input { width: 100%; padding: 18px; margin: 10px 0; background: #000; border: 1px solid var(--cor-main); color: #fff; border-radius: 15px; font-size: 16px; }
 
-        .input-area { padding: 20px; background: rgba(0,0,0,0.3); border-radius: 0 0 30px 30px; display: flex; gap: 10px; }
-        .input-area input { margin: 0; background: rgba(255,255,255,0.1); border: none; }
+        /* ESTRUTURA PRINCIPAL */
+        #main-app { display: none; height: 100vh; background: var(--bg-dinamico); position: relative; }
         
-        /* PARTICULAS */
-        .particle { position: absolute; font-size: 45px; z-index: 1; opacity: 0.8; filter: drop-shadow(0 0 10px var(--main-color)); }
+        /* PALCO CENTRAL (ICONE E SCORE) */
+        .stage { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+        #big-icon { font-size: 240px; filter: drop-shadow(0 0 40px var(--cor-main)); user-select: none; pointer-events: auto; transform: scale(1); }
+        #big-icon:hover { transform: scale(1.1); }
+        #big-icon:active { transform: scale(0.9); }
         
+        .score-display { font-size: 110px; font-weight: 900; color: var(--cor-main); text-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-top: -30px; z-index: 10; }
+
+        /* CHAT GIGANTE E MODERNO */
+        .chat-container {
+            position: absolute; right: 30px; top: 30px; bottom: 30px; width: 480px;
+            background: rgba(0, 0, 0, 0.88); border: 3px solid var(--cor-main); border-radius: 35px;
+            display: flex; flex-direction: column; z-index: 100; box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+            backdrop-filter: blur(15px);
+        }
+        #messages-list { flex: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
+        .msg-bubble { 
+            background: rgba(255,255,255,0.05); padding: 18px; border-radius: 20px; 
+            border-left: 5px solid var(--cor-main); animation: slideIn 0.4s ease-out forwards; 
+        }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+        
+        .msg-user { font-weight: bold; font-size: 14px; color: var(--cor-main); text-transform: uppercase; margin-bottom: 5px; display: block; }
+        .msg-text { color: #fff; font-size: 17px; line-height: 1.5; word-wrap: break-word; }
+
+        /* CONTROLES DE NAVEGAÇÃO */
+        .nav-bar { position: fixed; top: 35px; left: 40px; display: flex; gap: 20px; z-index: 500; }
+        .nav-btn { padding: 15px 40px; border-radius: 50px; border: 2px solid var(--cor-main); background: #000; color: var(--cor-main); font-weight: bold; font-size: 14px; letter-spacing: 2px; }
+        .nav-btn.active { background: var(--cor-main); color: #fff; box-shadow: 0 0 30px var(--cor-main); }
+
+        /* AREA DE INPUT */
+        .input-area { padding: 25px; background: rgba(0,0,0,0.4); border-radius: 0 0 35px 35px; display: flex; gap: 12px; }
+        .input-area input { margin: 0; background: rgba(255,255,255,0.08); border: none; }
+        .send-btn { background: var(--cor-main); border: none; color: #fff; padding: 0 30px; border-radius: 15px; font-weight: bold; }
+
+        /* PARTÍCULAS (ALMAS/CORAÇÕES) */
+        .particle { position: absolute; font-size: 55px; z-index: 5; opacity: 0.8; filter: drop-shadow(0 0 15px var(--cor-main)); user-select: none; }
+
         .hidden { display: none !important; }
     </style>
 </head>
-<body id="body-node">
+<body id="body-context">
 
     <div id="login-screen">
         <div class="login-box">
             <h1>BIPOLAR</h1>
-            <input type="text" id="user" placeholder="LOGIN">
-            <input type="password" id="pass" placeholder="PASSWORD">
-            <button onclick="logar()" style="width:100%; padding:15px; background:transparent; color:white; border:2px solid var(--main-color); border-radius:12px; font-weight:bold;">SISTEMA ENTRAR</button>
+            <input type="text" id="user-in" placeholder="USUÁRIO">
+            <input type="password" id="pass-in" placeholder="SENHA">
+            <button onclick="fazerLogin()" style="width:100%; padding:20px; background:var(--cor-main); color:white; border:none; border-radius:15px; font-weight:bold; cursor:pointer; margin-top:10px;">CONECTAR AO SISTEMA</button>
         </div>
     </div>
 
-    <div class="controls" id="nav" style="display:none">
-        <button id="btn-esp" class="btn-mode active" onclick="setMode('esp')">ESPERANÇA 💖</button>
-        <button id="btn-lad" class="btn-mode" onclick="setMode('lad')">LADRÃO 💀</button>
+    <div class="nav-bar" id="nav-ui" style="display:none">
+        <button id="btn-esp" class="nav-btn active" onclick="trocarModo('esp')">MODO ESPERANÇA 💖</button>
+        <button id="btn-lad" class="nav-btn" onclick="trocarModo('lad')">LADRÃO DE ALMAS 💀</button>
     </div>
 
     <div id="main-app">
-        <div class="center-stage">
-            <div id="big-icon" class="giant-icon">💖</div>
-            <div id="score" class="score-board">0</div>
+        <div class="stage">
+            <div id="big-icon" onclick="contarPonto()">💖</div>
+            <div id="main-score" class="score-display">0</div>
         </div>
 
-        <div class="chat-sidebar">
-            <div id="msg-box"></div>
+        <div class="chat-container">
+            <div id="messages-list"></div>
             <div class="input-area">
-                <button onclick="document.getElementById('f').click()" style="background:none; border:none; font-size:20px;">📷</button>
-                <input type="text" id="m-in" placeholder="Sussurre aqui...">
-                <button onclick="enviar()" style="background:var(--main-color); border:none; color:white; padding:10px 20px; border-radius:10px; font-weight:bold;">ENVIAR</button>
-                <input type="file" id="f" class="hidden" onchange="upload(this.files[0])">
+                <input type="text" id="chat-input" placeholder="Envie uma mensagem (dura 8 min)...">
+                <button class="send-btn" onclick="enviarMensagem()">SEND</button>
             </div>
         </div>
     </div>
 
     <script>
+        // CONFIGURAÇÃO FIREBASE (CONFORME SEU PRINT)
         const firebaseConfig = {
             apiKey: "AIzaSyD7GIQgMVr0lf4BOyQkXBh_Qhk-GK6wMK4",
             authDomain: "chat2000-5815b.firebaseapp.com",
@@ -106,16 +118,15 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.database();
-        const storage = firebase.storage();
 
-        let modo = 'esp';
-        let pontos = { esp: 0, lad: 0 };
-        const OITO_MINUTOS = 8 * 60 * 1000;
+        let canalAtual = 'esperanca';
+        let placar = { esp: 0, lad: 0 };
+        const TEMPO_LIMITE = 8 * 60 * 1000; // 8 MINUTOS EM MS
 
-        function logar() {
-            const u = document.getElementById('user').value;
-            const p = document.getElementById('pass').value;
-            if(!u || p.length < 6) return alert("Dados inválidos!");
+        function fazerLogin() {
+            const u = document.getElementById('user-in').value;
+            const p = document.getElementById('pass-in').value;
+            if(!u || p.length < 6) return alert("Dados incorretos!");
             const email = u.trim().toLowerCase() + "@bipolar.com";
             auth.signInWithEmailAndPassword(email, p).catch(() => auth.createUserWithEmailAndPassword(email, p));
         }
@@ -124,122 +135,101 @@
             if(user) {
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('main-app').style.display = 'block';
-                document.getElementById('nav').style.display = 'flex';
-                setMode('esp');
-                setInterval(spawn, 800);
-                setInterval(limparChat, 10000); // Checa mensagens velhas a cada 10s
+                document.getElementById('nav-ui').style.display = 'flex';
+                trocarModo('esp');
+                setInterval(gerarParticula, 1000);
             }
         });
 
-        function setMode(m) {
-            modo = m;
+        function trocarModo(m) {
+            canalAtual = m === 'esp' ? 'esperanca' : 'ladrao';
             const root = document.documentElement;
-            const body = document.getElementById('body-node');
+            const body = document.getElementById('body-context');
             
-            // SHAKE EFFECT
-            body.classList.remove('shake');
-            void body.offsetWidth;
-            body.classList.add('shake');
+            // EFEITO SHAKE AO TROCAR
+            body.classList.remove('shake-effect');
+            void body.offsetWidth; // Reset animação
+            body.classList.add('shake-effect');
 
             if(m === 'esp') {
-                root.style.setProperty('--main-color', '#ff0055');
-                root.style.setProperty('--bg-gradient', 'radial-gradient(circle, #fff 0%, #ffcbd5 100%)');
+                root.style.setProperty('--cor-main', '#ff0055');
+                root.style.setProperty('--bg-dinamico', 'radial-gradient(circle, #fff 0%, #ffcbd5 100%)');
                 document.getElementById('big-icon').innerText = '💖';
             } else {
-                root.style.setProperty('--main-color', '#ff0000');
-                root.style.setProperty('--bg-gradient', 'radial-gradient(circle, #2a0000 0%, #000 100%)');
+                root.style.setProperty('--cor-main', '#ff0000');
+                root.style.setProperty('--bg-dinamico', 'radial-gradient(circle, #2a0000 0%, #000 100%)');
                 document.getElementById('big-icon').innerText = '💀';
             }
 
             document.getElementById('btn-esp').classList.toggle('active', m === 'esp');
             document.getElementById('btn-lad').classList.toggle('active', m === 'lad');
-            document.getElementById('score').innerText = pontos[m];
+            document.getElementById('main-score').innerText = placar[m];
             
-            loadMessages();
+            ouvirMensagens();
         }
 
-        function loadMessages() {
-            const box = document.getElementById('msg-box');
-            box.innerHTML = "";
-            const canal = modo === 'esp' ? 'esperanca' : 'ladrao';
-            db.ref("bipolar_elite/" + canal).off();
-            db.ref("bipolar_elite/" + canal).limitToLast(40).on("child_added", snap => {
-                const d = snap.val();
-                if (Date.now() - d.time < OITO_MINUTOS) {
-                    addMsgToUI(d, snap.key);
+        function ouvirMensagens() {
+            const list = document.getElementById('messages-list');
+            list.innerHTML = "";
+            db.ref("bipolar_vElite/" + canalAtual).off();
+            db.ref("bipolar_vElite/" + canalAtual).limitToLast(50).on("child_added", snap => {
+                const data = snap.val();
+                const tempoPassado = Date.now() - data.timestamp;
+
+                if (tempoPassado < TEMPO_LIMITE) {
+                    const div = document.createElement('div');
+                    div.className = 'msg-bubble';
+                    div.id = "msg-" + snap.key;
+                    div.innerHTML = `<span class="msg-user">${data.user}</span><div class="msg-text">${data.text}</div>`;
+                    list.appendChild(div);
+                    list.scrollTop = list.scrollHeight;
+
+                    // LÓGICA PARA SUMIR EM 8 MINUTOS
+                    setTimeout(() => {
+                        if(div) div.style.opacity = '0';
+                        setTimeout(() => div.remove(), 500);
+                    }, TEMPO_LIMITE - tempoPassado);
                 }
             });
         }
 
-        function addMsgToUI(d, key) {
-            const box = document.getElementById('msg-box');
-            const div = document.createElement('div');
-            div.className = 'msg';
-            div.id = "msg-" + key;
-            let content = d.type === 'img' ? `<img src="${d.url}" style="width:100%; border-radius:10px;">` : d.text;
-            div.innerHTML = `<span class="msg-user">${d.user}</span><div class="msg-text">${content}</div>`;
-            box.appendChild(div);
-            box.scrollTop = box.scrollHeight;
+        function contarPonto() {
+            const m = canalAtual === 'esperanca' ? 'esp' : 'lad';
+            placar[m]++; // CONTAGEM DE 1 EM 1
+            document.getElementById('main-score').innerText = placar[m];
         }
 
-        function limparChat() {
-            document.querySelectorAll('.msg').forEach(el => {
-                // Aqui você pode adicionar lógica para remover do DOM se quiser, 
-                // mas a função loadMessages já filtra ao entrar.
-            });
-        }
-
-        function enviar() {
-            const val = document.getElementById('m-in').value;
-            if(!val.trim()) return;
-            const canal = modo === 'esp' ? 'esperanca' : 'ladrao';
-            db.ref("bipolar_elite/" + canal).push({
+        function enviarMensagem() {
+            const input = document.getElementById('chat-input');
+            if(!input.value.trim()) return;
+            
+            db.ref("bipolar_vElite/" + canalAtual).push({
                 user: auth.currentUser.email.split('@')[0],
-                text: val,
-                time: Date.now(),
-                type: 'text'
+                text: input.value,
+                timestamp: Date.now()
             });
-            document.getElementById('m-in').value = "";
+            input.value = "";
         }
 
-        function spawn() {
+        function gerarParticula() {
             const p = document.createElement('div');
             p.className = 'particle';
-            p.innerHTML = modo === 'esp' ? '💖' : '💀';
-            p.style.left = (Math.random() * 30 + 35) + '%';
+            p.innerHTML = canalAtual === 'esperanca' ? '💖' : '💀';
+            p.style.left = (Math.random() * 40 + 30) + '%';
             p.style.bottom = '-10%';
+            p.onclick = () => { contarPonto(); p.remove(); };
             
-            p.onclick = () => {
-                pontos[modo]++;
-                document.getElementById('score').innerText = pontos[modo];
-                p.style.transform = "scale(2)";
-                p.style.opacity = "0";
-                setTimeout(() => p.remove(), 200);
-            };
-
             document.getElementById('main-app').appendChild(p);
-            let b = -10;
-            let move = setInterval(() => {
-                b += 0.7; p.style.bottom = b + '%';
-                if(b > 110) { clearInterval(move); p.remove(); }
-            }, 30);
+
+            let pos = -10;
+            let anim = setInterval(() => {
+                pos += 0.6;
+                p.style.bottom = pos + '%';
+                if(pos > 110) { clearInterval(anim); p.remove(); }
+            }, 25);
         }
 
-        function upload(f) {
-            if(!f) return;
-            const ref = storage.ref(`bipolar_elite/${Date.now()}`);
-            ref.put(f).then(s => s.ref.getDownloadURL()).then(url => {
-                const canal = modo === 'esp' ? 'esperanca' : 'ladrao';
-                db.ref("bipolar_elite/" + canal).push({
-                    user: auth.currentUser.email.split('@')[0],
-                    url: url,
-                    time: Date.now(),
-                    type: 'img'
-                });
-            });
-        }
-
-        document.addEventListener('keypress', e => { if(e.key === 'Enter') enviar(); });
+        document.addEventListener('keypress', e => { if(e.key === 'Enter') enviarMensagem(); });
     </script>
 </body>
 </html>
