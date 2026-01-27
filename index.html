@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Minecraft Pro Chat: Sound Edition</title>
+    <title>Minecraft Pro Chat: Meow Edition</title>
     <style>
         @import url('https://fonts.cdnfonts.com/css/minecraftia');
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
@@ -12,14 +12,16 @@
         
         #sidebar { width: 30%; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; z-index: 10; transition: inherit; }
         
-        /* Contorno Neon */
         #toggle-btn { font-size: 130px; cursor: pointer; transition: 0.3s; user-select: none; z-index: 11; image-rendering: pixelated; }
         .theme-amigavel #toggle-btn { filter: drop-shadow(0 0 15px #ff4d7d); }
         .theme-nao-amigavel #toggle-btn { filter: drop-shadow(0 0 20px #ff0000); }
 
-        #score-board { margin-top: 20px; font-size: 20px; font-weight: bold; z-index: 11; padding: 10px 20px; border-radius: 8px; text-transform: uppercase; }
+        /* Placar com Animação de Pulo */
+        #score-board { margin-top: 20px; font-size: 20px; font-weight: bold; z-index: 11; padding: 10px 20px; border-radius: 8px; text-transform: uppercase; transition: 0.1s; }
         .theme-amigavel #score-board { color: #ff4d7d; border: 3px solid #ffcada; background: #fff; }
         .theme-nao-amigavel #score-board { color: #ff0000; border: 2px solid #ff0000; background: #000; box-shadow: 0 0 10px #ff0000; }
+        
+        .bump { transform: scale(1.2); }
 
         #chat-container { width: 70%; display: flex; flex-direction: column; position: relative; transition: inherit; }
         #header { padding: 30px; text-align: center; font-size: 24px; font-weight: bold; transition: inherit; z-index: 5; border-bottom: 4px solid rgba(0,0,0,0.05); }
@@ -31,24 +33,24 @@
         .my-message { align-self: flex-end; }
 
         .bg-particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; overflow: hidden; }
-        .particle { position: absolute; bottom: -80px; cursor: pointer; z-index: 20; pointer-events: auto; image-rendering: pixelated; transition: transform 0.1s; user-select: none; opacity: 0.7; }
+        .particle { position: absolute; bottom: -80px; cursor: pointer; z-index: 20; pointer-events: auto; image-rendering: pixelated; user-select: none; }
         @keyframes moveUp { 0% { transform: translateY(0) rotate(0deg); opacity: 0.7; } 100% { transform: translateY(-115vh) rotate(360deg); opacity: 0; } }
 
         /* TEMAS */
         .theme-amigavel { background-color: #fff; font-family: 'Minecraftia', sans-serif; }
         .theme-amigavel #sidebar { background: #fff; border-right: 4px solid #ffeef2; }
         .theme-amigavel #header { color: #ff4d7d; }
-        .theme-amigavel .message { background: #fff; border: 3px solid #ffcada; color: #555; box-shadow: 4px 4px 0px #eee; }
+        .theme-amigavel .message { background: #fff; border: 3px solid #ffcada; color: #555; }
         .theme-amigavel .my-message { background: #ff85a2; color: white; border-color: #ff4d7d; }
 
         .theme-nao-amigavel { background-color: #000; font-family: 'Share Tech Mono', monospace; }
         .theme-nao-amigavel #sidebar { border-right: 2px solid #ff0000; }
         .theme-nao-amigavel #header { color: #ff0000; text-shadow: 0 0 10px #ff0000; }
-        .theme-nao-amigavel .message { background: #000; border: 1px solid #ff0000; color: #ff4444; box-shadow: 0 0 10px rgba(255,0,0,0.3); }
+        .theme-nao-amigavel .message { background: #000; border: 1px solid #ff0000; color: #ff4444; }
         .theme-nao-amigavel .my-message { color: white; border-color: #ff0000; box-shadow: 0 0 15px #ff0000; }
 
         #input-area { padding: 20px; display: flex; gap: 10px; z-index: 10; }
-        input[type="text"] { flex: 1; padding: 12px; outline: none; border-radius: 8px; border: 2px solid #ddd; font-family: inherit; }
+        input[type="text"] { flex: 1; padding: 12px; border-radius: 8px; border: 2px solid #ddd; font-family: inherit; }
         .theme-nao-amigavel input[type="text"] { background: #000; border-color: #ff0000; color: #ff0000; }
         
         label, button { cursor: pointer; padding: 10px 15px; border-radius: 8px; border: none; font-family: inherit; font-weight: bold; }
@@ -58,8 +60,8 @@
     </style>
 </head>
 <body class="theme-amigavel">
-    <audio id="audio-pop" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3"></audio>
-    <audio id="audio-terror" src="https://assets.mixkit.co/active_storage/sfx/1118/1118-preview.mp3"></audio>
+    <audio id="audio-meow" src="https://assets.mixkit.co/active_storage/sfx/2569/2569-preview.mp3"></audio>
+    <audio id="audio-hiss" src="https://assets.mixkit.co/active_storage/sfx/2572/2572-preview.mp3"></audio>
 
     <div id="sidebar">
         <div class="bg-particles" id="sidebar-particles"></div>
@@ -91,6 +93,11 @@
         function updateScoreDisplay() {
             const board = document.getElementById('score-board');
             board.innerText = currentRoom === 'amigavel' ? `Corações: ${scores.amigavel}` : `Almas: ${scores.infernal}`;
+            
+            // Efeito de pulo no placar
+            board.classList.add('bump');
+            setTimeout(() => board.classList.remove('bump'), 100);
+            
             localStorage.setItem('chat_scores', JSON.stringify(scores));
         }
 
@@ -106,19 +113,20 @@
             p.onclick = function() {
                 if (currentRoom === 'amigavel') {
                     scores.amigavel++;
-                    const sound = document.getElementById('audio-pop');
+                    const sound = document.getElementById('audio-meow');
                     sound.currentTime = 0;
                     sound.play().catch(() => {});
                 } else {
                     scores.infernal++;
-                    const sound = document.getElementById('audio-terror');
+                    const sound = document.getElementById('audio-hiss');
                     sound.currentTime = 0;
                     sound.play().catch(() => {});
                 }
                 
                 updateScoreDisplay();
-                this.innerText = currentRoom === 'amigavel' ? '💥' : '🔥';
+                this.innerText = currentRoom === 'amigavel' ? '🐾' : '🔥';
                 this.style.transform = 'scale(1.5)';
+                this.style.pointerEvents = 'none';
                 setTimeout(() => this.remove(), 150);
             };
 
