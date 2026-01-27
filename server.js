@@ -6,7 +6,7 @@ const io = require('socket.io')(http, {
 });
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// --- COLOQUE SUA CHAVE AQUI ---
+// --- AIzaSyC55FiH5DEr8caVLPwc2Zxpfv_F1isQBEI ---
 const MINHA_CHAVE = 'COLE_AQUI_A_SUA_CHAVE_DO_PRINT'; 
 const genAI = new GoogleGenerativeAI(MINHA_CHAVE);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
@@ -42,3 +42,4 @@ const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => {
     console.log(`Servidor rodando!`);
 });
+
