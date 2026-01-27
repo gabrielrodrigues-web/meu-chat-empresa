@@ -2,18 +2,18 @@ const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
 
-// Configuração para suportar arquivos de até 10MB (Imagens e Áudios)
+// Permite fotos e áudios de até 10MB
 const io = require('socket.io')(http, { 
     maxHttpBufferSize: 1e7 
 });
 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// Sua chave de API do Gemini
+// Sua chave de API
 const MINHA_CHAVE = 'AIzaSyC55FiH5DEr8caVLPwc2Zxpfv_F1isQBEI'; 
 const genAI = new GoogleGenerativeAI(MINHA_CHAVE);
 
-// MODELO CORRIGIDO: Removido o "-latest" que causou o erro 404
+// Usando o modelo padrão estável
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 app.use(express.static(__dirname + '/public'));
@@ -24,31 +24,32 @@ app.get('/', (req, res) => {
 
 io.on('connection', (socket) => {
     socket.on('chat message', async (msg) => {
-        // 1. Repassa a mensagem original para todos no chat
+        // Envia sua mensagem para o chat aparecer na tela
         io.emit('chat message', msg);
 
-        // 2. Lógica do Gemini
+        // Verifica se você marcou a IA
         if (msg.text && msg.text.toLowerCase().includes('gemini')) {
             try {
-                const prompt = msg.text.replace(/gemini/gi, '').trim() || "Olá!";
+                // CORREÇÃO AQUI: Remove a palavra 'gemini' e pega o resto da sua pergunta
+                const perguntaPura = msg.text.replace(/gemini/gi, '').trim();
                 
-                // Chamada direta para o conteúdo
-                const result = await model.generateContent(prompt);
-                const response = await result.response;
-                const text = response.text();
+                // Se você não escreveu nada depois de 'gemini', ele pergunta o que você quer
+                const textoParaEnviar = perguntaPura || "Olá! Como posso te ajudar hoje?";
 
+                const result = await model.generateContent(textoParaEnviar);
+                const response = await result.response;
+                
                 io.emit('chat message', {
                     user: "Gemini_AI",
-                    text: text,
+                    text: response.text(),
                     mode: msg.mode,
                     isGemini: true
                 });
             } catch (erro) {
                 console.error("Erro no Gemini:", erro);
-                // Envia aviso no chat se houver falha na API
                 io.emit('chat message', {
                     user: "Sistema",
-                    text: "Erro ao conectar com a IA. Verifique os logs.",
+                    text: "Tive um erro ao processar sua pergunta. Tente novamente!",
                     isGemini: true
                 });
             }
@@ -58,5 +59,5 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => {
-    console.log('CHAT ONLINE: Rodando na porta ' + PORT);
+    console.log('CHAT ONLINE: Servidor rodando na porta ' + PORT);
 });
