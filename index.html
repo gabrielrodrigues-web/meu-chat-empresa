@@ -3,99 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bipolar Chat - Imersivo</title>
+    <title>BIPOLAR CHAT - V4</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-storage-compat.js"></script>
     <style>
-        * { box-sizing: border-box; }
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Courier New', monospace; overflow: hidden; transition: 0.5s; background: #000; }
+        * { box-sizing: border-box; outline: none; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Courier New', monospace; overflow: hidden; background: #000; }
 
-        /* TELA DE LOGIN ESTILO IMAGEM */
-        #login-screen { position: fixed; inset: 0; background: #000; z-index: 1000; display: flex; align-items: center; justify-content: center; }
-        .login-box { border: 2px solid #ff0055; padding: 40px; border-radius: 20px; text-align: center; background: #0a0a0a; box-shadow: 0 0 25px #ff0055; width: 350px; }
-        .login-box h1 { color: #fff; text-shadow: 0 0 10px #ff0055; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #ff0055; color: #fff; border-radius: 8px; outline: none; }
+        /* TELA DE LOGIN ESTILO NEON */
+        #login-screen { position: fixed; inset: 0; background: #000; z-index: 2000; display: flex; align-items: center; justify-content: center; }
+        .login-box { border: 2px solid #ff0055; padding: 40px; border-radius: 20px; text-align: center; background: #0a0a0a; box-shadow: 0 0 30px #ff0055; width: 350px; }
+        .login-box h1 { color: #fff; text-shadow: 0 0 15px #ff0055; margin-bottom: 25px; letter-spacing: 3px; }
+        .login-box input { width: 100%; padding: 15px; margin: 10px 0; background: #000; border: 1px solid #ff0055; color: #fff; border-radius: 10px; }
+        .login-box button { width: 100%; padding: 15px; background: #40001a; color: #fff; border: 1px solid #ff0055; cursor: pointer; border-radius: 10px; font-weight: bold; transition: 0.3s; }
+        .login-box button:hover { background: #ff0055; box-shadow: 0 0 20px #ff0055; }
 
-        /* ESTRUTURA DIVIDIDA */
-        #main-app { display: none; height: 100vh; grid-template-columns: 1fr 1fr; position: relative; }
+        /* ESTRUTURA DOS MODOS */
+        #main-app { display: none; height: 100vh; position: relative; }
+        .mode-container { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.8s ease-in-out; }
         
-        .side { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; transition: 0.5s; }
-        .side-esperanca { background: #fff1f5; border-right: 2px solid #ff0055; }
-        .side-ladrao { background: #050000; }
+        /* MODO ESPERANÇA */
+        .esperanca-bg { background: radial-gradient(circle, #fff 0%, #fff1f5 100%); color: #ff0055; }
+        /* MODO LADRÃO DE ALMAS */
+        .ladrao-bg { background: radial-gradient(circle, #1a0000 0%, #000 100%); color: #ff0000; }
 
-        /* ELEMENTOS CENTRAIS (IMAGEM) */
-        .big-icon { font-size: 150px; z-index: 10; filter: drop-shadow(0 0 20px rgba(255,0,85,0.5)); user-select: none; }
-        .title-text { font-size: 24px; font-weight: bold; margin: 10px 0; z-index: 10; text-transform: uppercase; }
-        .score-val { font-size: 30px; font-weight: bold; z-index: 10; color: #ff0055; }
+        /* ÍCONES GIGANTES */
+        .giant-icon { font-size: 180px; z-index: 10; filter: drop-shadow(0 0 30px rgba(255, 0, 85, 0.4)); animation: pulse 2s infinite; user-select: none; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        
+        .mode-label { font-size: 28px; font-weight: bold; margin: 15px 0 5px; z-index: 10; text-transform: uppercase; letter-spacing: 4px; }
+        .score-display { font-size: 45px; font-weight: bold; z-index: 10; text-shadow: 0 0 10px rgba(0,0,0,0.2); }
 
-        /* CAIXA DE CHAT (LADO DIREITO DE CADA MODO) */
-        .chat-overlay {
-            position: absolute; right: 20px; bottom: 20px; width: 320px; height: 450px;
-            background: rgba(0,0,0,0.85); border: 2px solid #ff0055; border-radius: 15px;
-            display: flex; flex-direction: column; z-index: 20; box-shadow: 0 0 15px rgba(0,0,0,0.5);
+        /* CAIXA DE CHAT ESTILIZADA */
+        .chat-dock {
+            position: absolute; right: 30px; bottom: 30px; width: 350px; height: 500px;
+            background: rgba(0,0,0,0.9); border: 2px solid #ff0055; border-radius: 20px;
+            display: flex; flex-direction: column; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
-        #messages-esp, #messages-lad { flex: 1; overflow-y: auto; padding: 10px; color: #fff; font-size: 13px; }
-        .input-bar { display: flex; padding: 10px; gap: 5px; background: #111; border-radius: 0 0 15px 15px; }
-        .input-bar input { margin: 0; padding: 8px; font-size: 12px; }
-
-        /* BOTÃO DE TROCA NO TOPO */
-        .nav { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; gap: 10px; }
-        .btn-nav { padding: 8px 20px; border-radius: 20px; border: 2px solid #ff0055; cursor: pointer; font-weight: bold; }
-
-        /* PARTÍCULAS ATRÁS */
-        .particle { position: absolute; cursor: pointer; font-size: 35px; z-index: 1; opacity: 0.6; }
+        .chat-header { padding: 15px; text-align: center; border-bottom: 1px solid #333; font-weight: bold; font-size: 12px; color: #ff0055; }
+        #messages-list { flex: 1; overflow-y: auto; padding: 15px; color: #eee; font-size: 14px; }
+        .msg-line { margin-bottom: 10px; line-height: 1.4; border-left: 2px solid #ff0055; padding-left: 8px; }
         
-        .hidden { display: none !important; }
+        /* BARRA DE INPUT */
+        .input-group { display: flex; padding: 12px; gap: 10px; background: #111; border-radius: 0 0 20px 20px; align-items: center; }
+        .input-group input { flex: 1; background: transparent; border: none; color: #fff; font-size: 14px; }
+        .btn-send { background: #ff0055; border: none; color: #fff; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+
+        /* BOTÕES DE NAVEGAÇÃO */
+        .nav-top { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 500; display: flex; gap: 15px; }
+        .btn-nav { padding: 10px 25px; border-radius: 30px; border: 2px solid #ff0055; cursor: pointer; font-weight: bold; transition: 0.3s; background: #000; color: #ff0055; }
+        .btn-nav.active { background: #ff0055; color: #fff; box-shadow: 0 0 15px #ff0055; }
+
+        /* PARTÍCULAS */
+        .part { position: absolute; cursor: pointer; font-size: 40px; z-index: 5; opacity: 0.7; transition: 0.2s; }
+        .part:hover { transform: scale(1.5); opacity: 1; }
+
+        .hidden { display: none !important; opacity: 0; pointer-events: none; }
     </style>
 </head>
 <body>
 
     <div id="login-screen">
         <div class="login-box">
-            <h1>BIPOLAR CHAT</h1>
-            <input type="text" id="user" placeholder="Usuário">
-            <input type="password" id="pass" placeholder="Senha">
-            <button onclick="logar()" style="width:100%; padding:12px; background:#40001a; color:white; border:1px solid #ff0055; cursor:pointer; border-radius:8px;">ENTRAR</button>
+            <h1>BIPOLAR</h1>
+            <input type="text" id="user" placeholder="USUÁRIO">
+            <input type="password" id="pass" placeholder="SENHA (6 dígitos)">
+            <button onclick="logar()">ENTRAR NO SISTEMA</button>
         </div>
     </div>
 
-    <div class="nav" id="nav-bar" style="display:none">
-        <button class="btn-nav" onclick="showMode('esp')" style="background:#fff; color:#ff0055">MODO ESPERANÇA</button>
-        <button class="btn-nav" onclick="showMode('lad')" style="background:#000; color:#ff0000">LADRÃO DE ALMAS</button>
+    <div class="nav-top" id="nav" style="display:none">
+        <button id="nav-esp" class="btn-nav active" onclick="switchMode('esp')">MODO ESPERANÇA</button>
+        <button id="nav-lad" class="btn-nav" onclick="switchMode('lad')">LADRÃO DE ALMAS</button>
     </div>
 
     <div id="main-app">
-        <div id="mode-esp" class="side side-esperanca">
-            <div class="big-icon">💖</div>
-            <div class="title-text" style="color:#ff0055">Modo Esperança</div>
-            <div class="score-val" id="pts-esp">0</div>
-            
-            <div class="chat-overlay">
-                <div id="messages-esp"></div>
-                <div class="input-bar">
-                    <button onclick="document.getElementById('file-esp').click()" style="background:none; border:none; cursor:pointer">📷</button>
-                    <input type="text" id="in-esp" placeholder="Enviar para Esperança...">
-                    <button onclick="enviar('esperanca')" style="background:#ff0055; color:#fff; border:none; padding:5px 10px; cursor:pointer">SEND</button>
-                    <input type="file" id="file-esp" style="display:none" onchange="upload(this.files[0], 'esperanca')">
-                </div>
-            </div>
+        <div id="view-esp" class="mode-container esperanca-bg">
+            <div class="giant-icon">💖</div>
+            <div class="mode-label">Modo Esperança</div>
+            <div class="score-display" id="scr-esp">0</div>
         </div>
 
-        <div id="mode-lad" class="side side-ladrao hidden">
-            <div class="big-icon">💀</div>
-            <div class="title-text" style="color:#ff0000">Ladrão de Almas</div>
-            <div class="score-val" id="pts-lad" style="color:#ff0000">0</div>
+        <div id="view-lad" class="mode-container ladrao-bg hidden">
+            <div class="giant-icon">💀</div>
+            <div class="mode-label" style="color:#ff0000">Ladrão de Almas</div>
+            <div class="score-display" id="scr-lad" style="color:#ff0000">0</div>
+        </div>
 
-            <div class="chat-overlay" style="border-color:#ff0000">
-                <div id="messages-lad"></div>
-                <div class="input-bar" style="border-top: 1px solid #ff0000">
-                    <button onclick="document.getElementById('file-lad').click()" style="background:none; border:none; cursor:pointer">📷</button>
-                    <input type="text" id="in-lad" placeholder="Enviar para Ladrão...">
-                    <button onclick="enviar('ladrao')" style="background:#ff0000; color:#fff; border:none; padding:5px 10px; cursor:pointer">SEND</button>
-                    <input type="file" id="file-lad" style="display:none" onchange="upload(this.files[0], 'ladrao')">
-                </div>
+        <div class="chat-dock" id="chat-ui">
+            <div class="chat-header" id="chat-title">CANAL: ESPERANÇA</div>
+            <div id="messages-list"></div>
+            <div class="input-group">
+                <span onclick="document.getElementById('f-up').click()" style="cursor:pointer">📷</span>
+                <input type="text" id="msg-input" placeholder="Escreva algo...">
+                <button class="btn-send" onclick="enviar()">SEND</button>
+                <input type="file" id="f-up" class="hidden" onchange="upload(this.files[0])">
             </div>
         </div>
     </div>
@@ -115,13 +119,13 @@
         const db = firebase.database();
         const storage = firebase.storage();
 
-        let modoAtivo = 'esp';
-        let pEsp = 0, pLad = 0;
+        let currentChannel = 'esperanca';
+        let ptsEsp = 0, ptsLad = 0;
 
         function logar() {
             const u = document.getElementById('user').value;
             const p = document.getElementById('pass').value;
-            if(!u || p.length < 6) return alert("Verifique os dados!");
+            if(!u || p.length < 6) return alert("Dados inválidos!");
             const email = u.trim().toLowerCase() + "@bipolar.com";
             auth.signInWithEmailAndPassword(email, p).catch(() => auth.createUserWithEmailAndPassword(email, p));
         }
@@ -129,72 +133,93 @@
         auth.onAuthStateChanged(user => {
             if(user) {
                 document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('main-app').style.display = 'grid';
-                document.getElementById('nav-bar').style.display = 'flex';
-                initChat('esperanca');
-                initChat('ladrao');
-                setInterval(spawn, 800);
+                document.getElementById('main-app').style.display = 'block';
+                document.getElementById('nav').style.display = 'flex';
+                switchMode('esp');
+                setInterval(spawnParticle, 900);
             }
         });
 
-        function showMode(m) {
-            modoAtivo = m;
-            document.getElementById('mode-esp').classList.toggle('hidden', m !== 'esp');
-            document.getElementById('mode-lad').classList.toggle('hidden', m !== 'lad');
-        }
+        function switchMode(m) {
+            currentChannel = m === 'esp' ? 'esperanca' : 'ladrao';
+            
+            // UI Toggle
+            document.getElementById('view-esp').classList.toggle('hidden', m !== 'esp');
+            document.getElementById('view-lad').classList.toggle('hidden', m !== 'lad');
+            document.getElementById('nav-esp').classList.toggle('active', m === 'esp');
+            document.getElementById('nav-lad').classList.toggle('active', m === 'lad');
+            
+            // Chat Style
+            const color = m === 'esp' ? '#ff0055' : '#ff0000';
+            document.getElementById('chat-ui').style.borderColor = color;
+            document.getElementById('chat-title').innerText = "CANAL: " + currentChannel.toUpperCase();
+            document.getElementById('chat-title').style.color = color;
 
-        function initChat(c) {
-            const boxId = c === 'esperanca' ? 'messages-esp' : 'messages-lad';
-            db.ref("bipolar_v3/" + c).limitToLast(20).on("child_added", snap => {
+            // Load Messages
+            document.getElementById('messages-list').innerHTML = "";
+            db.ref("bipolar_v4/" + currentChannel).off();
+            db.ref("bipolar_v4/" + currentChannel).limitToLast(25).on("child_added", snap => {
                 const d = snap.val();
-                const box = document.getElementById(boxId);
-                let content = d.type === 'img' ? `<img src="${d.url}" style="max-width:100%; border-radius:5px;">` : d.text;
-                box.innerHTML += `<div style="margin-bottom:8px"><b>${d.user}:</b><br>${content}</div>`;
-                box.scrollTop = box.scrollHeight;
+                const list = document.getElementById('messages-list');
+                let content = d.type === 'img' ? `<img src="${d.url}" style="width:100%; border-radius:10px; margin-top:5px;">` : d.text;
+                list.innerHTML += `<div class="msg-line"><b style="color:${color}">${d.user}:</b><br>${content}</div>`;
+                list.scrollTop = list.scrollHeight;
             });
         }
 
-        function enviar(c) {
-            const inpId = c === 'esperanca' ? 'in-esp' : 'in-lad';
-            const val = document.getElementById(inpId).value;
+        function enviar() {
+            const val = document.getElementById('msg-input').value;
             if(val.trim()) {
-                db.ref("bipolar_v3/" + c).push({ user: auth.currentUser.email.split('@')[0], text: val, type: 'text' });
-                document.getElementById(inpId).value = "";
+                db.ref("bipolar_v4/" + currentChannel).push({
+                    user: auth.currentUser.email.split('@')[0],
+                    text: val,
+                    type: 'text'
+                });
+                document.getElementById('msg-input').value = "";
             }
         }
 
-        function spawn() {
-            const container = modoAtivo === 'esp' ? 'mode-esp' : 'mode-lad';
-            const emoji = modoAtivo === 'esp' ? '💖' : '💀';
+        function spawnParticle() {
+            const isEsp = currentChannel === 'esperanca';
+            const emoji = isEsp ? '💖' : '💀';
             const p = document.createElement('div');
-            p.className = 'particle';
+            p.className = 'part';
             p.innerHTML = emoji;
-            p.style.left = (Math.random() * 40 + 30) + '%'; // Concentrado atrás do ícone central
-            p.style.top = '110%';
+            // Spawna atrás do ícone central
+            p.style.left = (Math.random() * 30 + 35) + '%';
+            p.style.bottom = '-10%';
+            
             p.onclick = () => {
-                if(modoAtivo === 'esp') { pEsp += 10; document.getElementById('pts-esp').innerText = pEsp; }
-                else { pLad += 10; document.getElementById('pts-lad').innerText = pLad; }
-                p.remove();
+                if(isEsp) { ptsEsp += 10; document.getElementById('scr-esp').innerText = ptsEsp; }
+                else { ptsLad += 10; document.getElementById('scr-lad').innerText = ptsLad; }
+                p.style.transform = "scale(0)";
+                setTimeout(() => p.remove(), 200);
             };
+
+            const container = isEsp ? 'view-esp' : 'view-lad';
             document.getElementById(container).appendChild(p);
-            let pos = 110;
+
+            let b = -10;
             let move = setInterval(() => {
-                pos -= 0.8; p.style.top = pos + '%';
-                if(pos < -10) { clearInterval(move); p.remove(); }
-            }, 30);
+                b += 0.6;
+                p.style.bottom = b + '%';
+                if(b > 110) { clearInterval(move); p.remove(); }
+            }, 25);
         }
 
-        function upload(f, c) {
+        function upload(f) {
             if(!f) return;
-            storage.ref(`bipolar/${Date.now()}`).put(f).then(s => s.ref.getDownloadURL()).then(url => {
-                db.ref("bipolar_v3/" + c).push({ user: auth.currentUser.email.split('@')[0], url: url, type: 'img' });
+            const ref = storage.ref(`bipolar/${Date.now()}`);
+            ref.put(f).then(s => s.ref.getDownloadURL()).then(url => {
+                db.ref("bipolar_v4/" + currentChannel).push({
+                    user: auth.currentUser.email.split('@')[0],
+                    url: url,
+                    type: 'img'
+                });
             });
         }
 
-        // ENTER PARA ENVIAR
-        document.addEventListener('keypress', e => {
-            if(e.key === 'Enter') enviar(modoAtivo === 'esp' ? 'esperanca' : 'ladrao');
-        });
+        document.addEventListener('keypress', e => { if(e.key === 'Enter') enviar(); });
     </script>
 </body>
 </html>
