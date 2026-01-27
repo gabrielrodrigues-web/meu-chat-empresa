@@ -5,60 +5,43 @@
     <title>Dual Chat: Amigável vs Não Amigável</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; transition: 0.5s; }
-        
-        /* Sidebar e Fundos Animados */
         #sidebar { width: 35%; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; z-index: 2; border-right: 2px solid rgba(0,0,0,0.1); }
         .bg-particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
-
-        /* Botão Coração/Diabinho Central */
         #toggle-btn { font-size: 100px; cursor: pointer; transition: transform 0.2s; user-select: none; z-index: 3; }
-        #toggle-btn:active { transform: scale(1.5); }
-
-        /* Chat */
         #chat-container { width: 65%; display: flex; flex-direction: column; background: rgba(255,255,255,0.9); z-index: 2; }
         #header { padding: 20px; text-align: center; font-size: 24px; font-weight: bold; border-bottom: 1px solid #eee; }
         #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        
-        /* Mensagens */
-        .message { max-width: 80%; padding: 12px; border-radius: 15px; background: #eee; align-self: flex-start; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .message { max-width: 80%; padding: 12px; border-radius: 15px; background: #eee; align-self: flex-start; }
         .my-message { align-self: flex-end; background: #ffc0cb; color: white; }
-
-        /* Partículas subindo */
-        .particle { position: absolute; bottom: -50px; animation: moveUp 4s linear infinite; opacity: 0.7; font-size: 20px; }
-        @keyframes moveUp {
-            0% { transform: translateY(0) translateX(0); opacity: 1; }
-            100% { transform: translateY(-110vh) translateX(20px); opacity: 0; }
-        }
-
+        .particle { position: absolute; bottom: -50px; animation: moveUp 4s linear infinite; opacity: 0.7; font-size: 24px; }
+        @keyframes moveUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-110vh); opacity: 0; } }
+        
         /* Temas */
         .theme-amigavel { background-color: #fff0f5; }
         .theme-amigavel #header { color: #ff69b4; }
         .theme-nao-amigavel { background-color: #2c003e; color: white; }
         .theme-nao-amigavel #header { color: #ff4500; }
         .theme-nao-amigavel #chat-container { background: rgba(30,30,30,0.9); }
-
         #input-area { padding: 20px; display: flex; gap: 10px; background: white; }
-        input { flex: 1; padding: 12px; border-radius: 20px; border: 1px solid #ddd; outline: none; }
-        button { border: none; background: #ff69b4; color: white; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; font-size: 20px; }
+        input { flex: 1; padding: 12px; border-radius: 20px; border: 1px solid #ddd; }
+        button { border: none; background: #ff69b4; color: white; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; }
     </style>
 </head>
 <body class="theme-amigavel">
-
     <audio id="sound-amigavel" src="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3"></audio>
     <audio id="sound-nao-amigavel" src="https://assets.mixkit.co/active_storage/sfx/2565/2565-preview.mp3"></audio>
 
     <div id="sidebar">
         <div class="bg-particles" id="particle-container"></div>
         <div id="toggle-btn">❤️</div>
-        <p id="label-mode" style="font-weight: bold;">Clique para mudar de canal</p>
+        <p id="label-mode">Toque no coração</p>
     </div>
 
     <div id="chat-container">
         <div id="header">Conversas Amigáveis</div>
         <div id="messages"></div>
         <div id="input-area">
-            <input type="text" id="msg-input" placeholder="Escreva aqui...">
+            <input type="text" id="msg-input" placeholder="Escreva algo...">
             <button id="send-btn">→</button>
         </div>
     </div>
@@ -68,38 +51,32 @@
         const socket = io();
         let currentRoom = 'amigavel';
         const user = "Usuário " + Math.floor(Math.random() * 999);
-        let particleInterval;
+        let pInterval;
 
-        const toggleBtn = document.getElementById('toggle-btn');
-        const container = document.getElementById('particle-container');
-
-        // Função para criar partículas
         function startParticles(emoji) {
-            if (particleInterval) clearInterval(particleInterval);
-            particleInterval = setInterval(() => {
+            if (pInterval) clearInterval(pInterval);
+            pInterval = setInterval(() => {
                 const p = document.createElement('div');
                 p.className = 'particle';
                 p.innerText = emoji;
                 p.style.left = Math.random() * 100 + '%';
-                p.style.animationDuration = (Math.random() * 3 + 2) + 's';
-                container.appendChild(p);
+                document.getElementById('particle-container').appendChild(p);
                 setTimeout(() => p.remove(), 4000);
             }, 300);
         }
 
-        // Troca de canais
-        toggleBtn.onclick = function() {
-            container.innerHTML = '';
+        document.getElementById('toggle-btn').onclick = function() {
+            document.getElementById('particle-container').innerHTML = '';
             if (currentRoom === 'amigavel') {
                 currentRoom = 'nao-amigavel';
                 document.body.className = 'theme-nao-amigavel';
-                toggleBtn.innerText = '😈';
+                this.innerText = '😈';
                 document.getElementById('header').innerText = 'Conversas Não Amigáveis';
                 startParticles('😈');
             } else {
                 currentRoom = 'amigavel';
                 document.body.className = 'theme-amigavel';
-                toggleBtn.innerText = '❤️';
+                this.innerText = '❤️';
                 document.getElementById('header').innerText = 'Conversas Amigáveis';
                 startParticles('❤️');
             }
@@ -107,7 +84,6 @@
             document.getElementById('messages').innerHTML = '';
         };
 
-        // Envio de mensagem
         document.getElementById('send-btn').onclick = () => {
             const input = document.getElementById('msg-input');
             if (input.value) {
@@ -116,12 +92,9 @@
             }
         };
 
-        // Recebimento de mensagem com SOM
         socket.on('chat message', (msg) => {
-            // Toca o som baseado no canal atual
             const sound = document.getElementById(currentRoom === 'amigavel' ? 'sound-amigavel' : 'sound-nao-amigavel');
-            sound.play().catch(e => console.log("Aguardando interação para tocar som"));
-
+            sound.play().catch(() => {});
             const div = document.createElement('div');
             div.className = 'message ' + (msg.user === user ? 'my-message' : '');
             div.innerHTML = `<b>${msg.user}:</b><br>${msg.text}`;
@@ -129,7 +102,6 @@
             document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
         });
 
-        // Inicialização
         startParticles('❤️');
         socket.emit('join room', 'amigavel');
     </script>
