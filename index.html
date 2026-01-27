@@ -7,64 +7,72 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-storage-compat.js"></script>
     <style>
         * { box-sizing: border-box; }
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Courier New', monospace; overflow: hidden; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Courier New', monospace; overflow: hidden; transition: 0.5s; }
 
-        /* TELA DE LOGIN ESTILO IMAGEM */
+        /* LOGIN */
         #login-screen { position: fixed; inset: 0; background: #000; z-index: 1000; display: flex; align-items: center; justify-content: center; }
         .login-box { border: 2px solid #ff0055; padding: 40px; border-radius: 20px; text-align: center; background: #0a0a0a; box-shadow: 0 0 25px #ff0055; width: 350px; }
-        .login-box h1 { color: #fff; text-shadow: 0 0 10px #ff0055; font-size: 2.5rem; margin-bottom: 20px; }
         input { width: 100%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #ff0055; color: #fff; border-radius: 8px; }
 
-        /* ESTRUTURA DO APP */
-        #main-app { display: none; height: 100vh; flex-direction: column; position: relative; }
-        
         /* TEMAS */
-        .theme-fofo { background: #fff1f5; color: #ff0055; }
-        .theme-terror { background: #050000; color: #ff0000; }
+        .theme-esperanca { background: #fff1f5; color: #ff0055; }
+        .theme-ladrao { background: #050000; color: #ff0000; }
 
-        /* CABEÇALHO */
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: rgba(0,0,0,0.8); z-index: 100; border-bottom: 2px solid #ff0055; }
-        .btn-canal { padding: 10px 20px; cursor: pointer; border: none; border-radius: 5px; font-weight: bold; margin: 0 5px; }
+        #main-app { display: none; height: 100vh; flex-direction: column; position: relative; }
 
-        /* CHAT BOX */
+        /* HEADER E SCORE */
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: rgba(0,0,0,0.85); z-index: 100; border-bottom: 2px solid #ff0055; color: white; }
+        .score-box { font-size: 18px; font-weight: bold; display: flex; gap: 20px; }
+
+        /* CHAT */
         .chat-container { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; }
-        .chat-box { width: 400px; height: 500px; background: rgba(0,0,0,0.9); border: 2px solid #ff0055; border-radius: 20px; display: flex; flex-direction: column; z-index: 10; }
-        #messages { flex: 1; overflow-y: auto; padding: 15px; color: #fff; }
-        .input-area { display: flex; padding: 10px; gap: 5px; }
+        .chat-box { width: 450px; height: 550px; background: rgba(0,0,0,0.9); border: 3px solid #ff0055; border-radius: 20px; display: flex; flex-direction: column; z-index: 10; }
+        #messages { flex: 1; overflow-y: auto; padding: 15px; color: white; }
+        .msg img { max-width: 200px; border-radius: 10px; display: block; margin: 5px 0; }
+        
+        .input-area { display: flex; padding: 10px; gap: 5px; background: #111; align-items: center; }
+        .input-area button { background: none; border: 1px solid #ff0055; color: white; cursor: pointer; padding: 5px; border-radius: 5px; }
 
-        /* EMOJIS FLUTUANTES */
-        .particle { position: absolute; cursor: pointer; font-size: 45px; user-select: none; z-index: 5; transition: transform 0.1s; }
+        /* EMOJIS */
+        .particle { position: absolute; cursor: pointer; font-size: 45px; user-select: none; z-index: 5; }
     </style>
 </head>
-<body class="theme-fofo">
+<body class="theme-esperanca">
 
     <div id="login-screen">
         <div class="login-box">
-            <h1>BIPOLAR CHAT</h1>
+            <h1 style="color: white;">BIPOLAR CHAT</h1>
             <input type="text" id="user" placeholder="Usuário">
             <input type="password" id="pass" placeholder="Senha">
-            <button onclick="logar()" style="width:100%; padding:12px; background:#40001a; color:white; border:1px solid #ff0055; cursor:pointer;">ENTRAR / REGISTRAR</button>
+            <button onclick="logar()" style="width:100%; padding:12px; background:#40001a; color:white; border:1px solid #ff0055; cursor:pointer;">ENTRAR</button>
         </div>
     </div>
 
     <div id="main-app">
         <div class="header">
-            <div style="font-size: 20px;">PONTOS: <span id="score">0</span></div>
-            <div>
-                <button class="btn-canal" onclick="mudar('fofo')" style="background:#ff0055; color:white;">CANAL 1 💖</button>
-                <button class="btn-canal" onclick="mudar('terror')" style="background:#333; color:white;">CANAL 2 💀</button>
+            <div class="score-box">
+                <div>ESPERANÇA: <span id="pts-esp">0</span></div>
+                <div>LADRÃO: <span id="pts-lad">0</span></div>
             </div>
-            <button onclick="auth.signOut()" style="background:none; color:white; border:1px solid #444; cursor:pointer;">SAIR</button>
+            <div>
+                <button onclick="mudar('esperanca')" style="background:#ffb6c1; color:#ff0055; border:none; padding:10px; cursor:pointer; font-weight:bold;">MODO ESPERANÇA 💖</button>
+                <button onclick="mudar('ladrao')" style="background:#300; color:#ff0000; border:none; padding:10px; cursor:pointer; font-weight:bold;">LADRÃO DE ALMAS 💀</button>
+            </div>
+            <button onclick="auth.signOut()" style="background:none; color:#555; border:none; cursor:pointer;">SAIR</button>
         </div>
 
         <div class="chat-container">
             <div class="chat-box" id="caixa">
                 <div id="messages"></div>
                 <div class="input-area">
+                    <button title="Enviar Imagem" onclick="document.getElementById('file-in').click()">📷</button>
+                    <button title="Gravar Áudio" id="rec-btn">🎤</button>
                     <input type="text" id="msg-input" placeholder="Mensagem...">
-                    <button onclick="enviar()" style="background:#ff0055; color:white; border:none; padding:10px; cursor:pointer;">SEND</button>
+                    <button onclick="enviar()" style="background:#ff0055; padding: 10px 15px;">SEND</button>
+                    <input type="file" id="file-in" style="display:none" accept="image/*" onchange="uploadFile(this.files[0], 'img')">
                 </div>
             </div>
         </div>
@@ -76,16 +84,17 @@
             authDomain: "chat2000-5815b.firebaseapp.com",
             databaseURL: "https://chat2000-5815b-default-rtdb.firebaseio.com",
             projectId: "chat2000-5815b",
-            storageBucket: "chat2000-5815b.firebasestorage.app",
+            storageBucket: "chat2000-5815b.appspot.com",
             messagingSenderId: "88820669466",
             appId: "1:88820669466:web:df968acfebc5bd31ec85a3"
         };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.database();
+        const storage = firebase.storage();
 
-        let canal = 'fofo';
-        let pontos = 0;
+        let canal = 'esperanca';
+        let ptsEsp = 0, ptsLad = 0;
 
         function logar() {
             const u = document.getElementById('user').value;
@@ -99,8 +108,8 @@
             if(user) {
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('main-app').style.display = 'flex';
-                mudar('fofo');
-                iniciarParticulas();
+                mudar('esperanca');
+                setInterval(spawn, 1500);
             } else {
                 document.getElementById('login-screen').style.display = 'flex';
                 document.getElementById('main-app').style.display = 'none';
@@ -109,50 +118,81 @@
 
         function mudar(tipo) {
             canal = tipo;
-            document.body.className = tipo === 'fofo' ? 'theme-fofo' : 'theme-terror';
-            document.getElementById('caixa').style.borderColor = tipo === 'fofo' ? '#ff0055' : '#ff0000';
-            document.querySelectorAll('.particle').forEach(p => p.remove()); // Limpa emojis antigos
+            document.body.className = tipo === 'esperanca' ? 'theme-esperanca' : 'theme-ladrao';
+            document.getElementById('caixa').style.borderColor = tipo === 'esperanca' ? '#ff0055' : '#ff0000';
+            document.querySelectorAll('.particle').forEach(p => p.remove());
             
             document.getElementById('messages').innerHTML = "";
-            db.ref("chat_" + canal).off();
-            db.ref("chat_" + canal).limitToLast(20).on("child_added", snap => {
+            db.ref("bipolar_chat/" + canal).off();
+            db.ref("bipolar_chat/" + canal).limitToLast(20).on("child_added", snap => {
                 const d = snap.val();
-                document.getElementById('messages').innerHTML += `<div><b style="color:#ff0055">${d.user}:</b> ${d.text}</div>`;
-                document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+                const box = document.getElementById('messages');
+                let content = d.text;
+                if(d.type === 'img') content = `<img src="${d.url}">`;
+                if(d.type === 'audio') content = `<audio controls src="${d.url}"></audio>`;
+                
+                box.innerHTML += `<div class="msg"><b style="color:#ff0055">${d.user}:</b><br>${content}</div>`;
+                box.scrollTop = box.scrollHeight;
             });
         }
 
         function enviar() {
             const t = document.getElementById('msg-input').value;
             if(t.trim()) {
-                db.ref("chat_" + canal).push({ user: auth.currentUser.email.split('@')[0], text: t });
+                db.ref("bipolar_chat/" + canal).push({ user: auth.currentUser.email.split('@')[0], text: t, type: 'text' });
                 document.getElementById('msg-input').value = "";
             }
         }
 
         document.addEventListener('keypress', e => { if(e.key === 'Enter') enviar(); });
 
-        function iniciarParticulas() {
-            setInterval(() => {
-                const p = document.createElement('div');
-                p.className = 'particle';
-                p.innerHTML = canal === 'fofo' ? '💖' : '💀';
-                p.style.left = Math.random() * 90 + 'vw';
-                p.style.top = '110vh';
-                p.onclick = () => {
-                    pontos += 10;
-                    document.getElementById('score').innerText = pontos;
-                    p.remove();
-                };
-                document.body.appendChild(p);
-                let pos = 110;
-                let move = setInterval(() => {
-                    pos -= 0.5;
-                    p.style.top = pos + 'vh';
-                    if(pos < -10) { clearInterval(move); p.remove(); }
-                }, 20);
-            }, 1000);
+        function spawn() {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.innerHTML = canal === 'esperanca' ? '💖' : '💀';
+            p.style.left = Math.random() * 90 + 'vw';
+            p.style.top = '110vh';
+            p.onclick = () => {
+                if(canal === 'esperanca') { ptsEsp += 10; document.getElementById('pts-esp').innerText = ptsEsp; }
+                else { ptsLad += 10; document.getElementById('pts-lad').innerText = ptsLad; }
+                p.remove();
+            };
+            document.body.appendChild(p);
+            let pos = 110;
+            let move = setInterval(() => {
+                pos -= 0.5;
+                p.style.top = pos + 'vh';
+                if(pos < -10) { clearInterval(move); p.remove(); }
+            }, 20);
         }
+
+        // UPLOAD IMAGEM E AUDIO
+        function uploadFile(file, type) {
+            if(!file) return;
+            const ref = storage.ref(`uploads/${Date.now()}_${file.name || 'audio.webm'}`);
+            ref.put(file).then(snap => snap.ref.getDownloadURL()).then(url => {
+                db.ref("bipolar_chat/" + canal).push({ user: auth.currentUser.email.split('@')[0], url: url, type: type });
+            });
+        }
+
+        // GRAVAÇÃO DE AUDIO
+        let mediaRecorder;
+        document.getElementById('rec-btn').onmousedown = () => {
+            navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                mediaRecorder = new MediaRecorder(stream);
+                let chunks = [];
+                mediaRecorder.ondataavailable = e => chunks.push(e.data);
+                mediaRecorder.onstop = () => uploadFile(new Blob(chunks, { type: 'audio/webm' }), 'audio');
+                mediaRecorder.start();
+                document.getElementById('rec-btn').style.background = 'red';
+            });
+        };
+        document.getElementById('rec-btn').onmouseup = () => {
+            if(mediaRecorder) {
+                mediaRecorder.stop();
+                document.getElementById('rec-btn').style.background = 'none';
+            }
+        };
     </script>
 </body>
 </html>
