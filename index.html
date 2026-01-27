@@ -2,78 +2,79 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Dual Chat: Neon Edition</title>
+    <title>Dual Chat: Kawaii vs Hacker</title>
     <style>
         /* Base do Layout */
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; transition: 0.5s; }
-        #sidebar { width: 35%; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; z-index: 2; transition: 0.5s; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; transition: 0.8s; }
+        #sidebar { width: 30%; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; z-index: 2; transition: 0.5s; }
         .bg-particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
-        #toggle-btn { font-size: 100px; cursor: pointer; transition: transform 0.2s; user-select: none; z-index: 3; }
+        #toggle-btn { font-size: 80px; cursor: pointer; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); user-select: none; z-index: 3; filter: drop-shadow(0 0 10px rgba(0,0,0,0.1)); }
+        #toggle-btn:hover { transform: scale(1.2); }
         
-        #chat-container { width: 65%; display: flex; flex-direction: column; z-index: 2; transition: 0.5s; }
-        #header { padding: 20px; text-align: center; font-size: 26px; font-weight: bold; transition: 0.5s; }
-        #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+        #chat-container { width: 70%; display: flex; flex-direction: column; z-index: 2; transition: 0.5s; position: relative; }
+        #header { padding: 25px; text-align: center; font-size: 28px; font-weight: bold; transition: 0.5s; letter-spacing: 1px; }
+        #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
         
-        .message { max-width: 80%; padding: 12px; border-radius: 15px; align-self: flex-start; transition: 0.3s; }
-        .particle { position: absolute; bottom: -50px; animation: moveUp 4s linear infinite; opacity: 0.8; font-size: 24px; }
-        @keyframes moveUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-110vh); opacity: 0; } }
+        .message { max-width: 75%; padding: 14px; border-radius: 20px; align-self: flex-start; transition: 0.3s; position: relative; }
+        .particle { position: absolute; bottom: -50px; animation: moveUp 4s linear infinite; opacity: 0.6; font-size: 24px; }
+        @keyframes moveUp { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(-110vh) rotate(360deg); opacity: 0; } }
 
-        /* TEMA AMIGÁVEL (Branco Neon / Rosa) */
-        .theme-amigavel { background-color: #ffffff; color: #ff1493; }
-        .theme-amigavel #sidebar { 
-            background-color: #fffafa; 
-            border-right: 4px solid #ff1493;
-            box-shadow: 10px 0 20px rgba(255, 20, 147, 0.3); 
-        }
-        .theme-amigavel #chat-container { 
-            background: #ffffff; 
-            border: 4px solid #ff1493;
-            box-shadow: 0 0 25px rgba(255, 20, 147, 0.5); 
-            color: #333;
-        }
-        .theme-amigavel #header { 
-            color: #ff1493; 
-            text-shadow: 0 0 10px #ff1493, 0 0 15px #ff69b4; 
-            border-bottom: 2px solid #ff1493;
-        }
-        .theme-amigavel .message { background: #fff0f5; color: #333; border: 1px solid #ffb6c1; }
-        .theme-amigavel .my-message { align-self: flex-end; background: #ff1493; color: white; box-shadow: 0 0 10px #ff1493; }
+        /* --- TEMA AMIGÁVEL (Kawaii Style) --- */
+        .theme-amigavel { background-color: #fff5f8; color: #ff85a2; font-family: 'Comic Sans MS', 'Arial', sans-serif; }
+        .theme-amigavel #sidebar { background-color: #ffeef2; border-right: 5px dotted #ffc1d1; }
+        .theme-amigavel #chat-container { background: #ffffff; }
+        .theme-amigavel #header { color: #ff4d7d; text-shadow: 2px 2px #ffcada; }
+        .theme-amigavel .message { background: #fff0f5; color: #666; border: 2px solid #ffdae3; border-radius: 25px 25px 25px 5px; box-shadow: 3px 3px 10px rgba(255, 182, 193, 0.2); }
+        .theme-amigavel .my-message { align-self: flex-end; background: #ff85a2; color: white; border-radius: 25px 25px 5px 25px; border: none; }
+        .theme-amigavel #msg-input { border: 3px solid #ffc1d1; border-radius: 30px; padding: 15px; background: #fffafb; color: #ff4d7d; }
+        .theme-amigavel button { background: #ff4d7d; border-radius: 50%; box-shadow: 0 4px 10px #ffcada; }
 
-        /* TEMA NÃO AMIGÁVEL (Preto Neon / Vermelho) */
-        .theme-nao-amigavel { background-color: #000000; color: #ff0000; }
+        /* --- TEMA NÃO AMIGÁVEL (Hacker Dark Neon) --- */
+        .theme-nao-amigavel { background-color: #000000; color: #00ff41; font-family: 'Courier New', Courier, monospace; }
         .theme-nao-amigavel #sidebar { 
-            background-color: #050000; 
-            border-right: 4px solid #ff0000;
-            box-shadow: 10px 0 20px rgba(255, 0, 0, 0.5); 
+            background-color: #050505; 
+            border-right: 2px solid #ff0000;
+            box-shadow: 5px 0 20px rgba(255, 0, 0, 0.4); 
         }
-        .theme-nao-amigavel #chat-container { 
-            background: #0a0a0a; 
-            border: 4px solid #ff0000;
-            box-shadow: 0 0 25px rgba(255, 0, 0, 0.7); 
-            color: white;
-        }
+        .theme-nao-amigavel #chat-container { background: #080808; border-left: 1px solid #ff0000; }
         .theme-nao-amigavel #header { 
             color: #ff0000; 
-            text-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000; 
-            border-bottom: 2px solid #ff0000;
+            text-shadow: 0 0 10px #ff0000, 0 0 20px #8b0000; 
+            border-bottom: 1px solid #ff0000;
+            text-transform: uppercase;
         }
-        .theme-nao-amigavel .message { background: #222; color: #fff; border: 1px solid #444; }
-        .theme-nao-amigavel .my-message { align-self: flex-end; background: #ff0000; color: white; box-shadow: 0 0 10px #ff0000; }
-        
-        /* Área de Input Geral */
+        .theme-nao-amigavel .message { 
+            background: #111; 
+            color: #00ff41; 
+            border: 1px solid #00ff41; 
+            border-radius: 0px; 
+            box-shadow: 0 0 5px #00ff41;
+        }
+        .theme-nao-amigavel .my-message { 
+            align-self: flex-end; 
+            background: #000; 
+            color: #ff0000; 
+            border: 1px solid #ff0000; 
+            box-shadow: 0 0 10px #ff0000; 
+        }
+        .theme-nao-amigavel #msg-input { 
+            background: #000; 
+            border: 1px solid #ff0000; 
+            color: #ff0000; 
+            border-radius: 0px; 
+            font-family: 'Courier New', monospace;
+        }
+        .theme-nao-amigavel button { 
+            background: #000; 
+            color: #ff0000; 
+            border: 1px solid #ff0000; 
+            box-shadow: 0 0 10px #ff0000; 
+            border-radius: 5px;
+        }
+
         #input-area { padding: 20px; display: flex; gap: 10px; transition: 0.5s; }
-        input { flex: 1; padding: 12px; border-radius: 20px; outline: none; transition: 0.3s; }
-        button { border: none; color: white; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-
-        /* Inputs Amigáveis */
-        .theme-amigavel #input-area { background: #ffffff; border-top: 2px solid #ff1493; }
-        .theme-amigavel input { background: #fff; border: 2px solid #ff1493; color: #333; }
-        .theme-amigavel button { background: #ff1493; box-shadow: 0 0 10px #ff1493; }
-
-        /* Inputs Não Amigáveis */
-        .theme-nao-amigavel #input-area { background: #000; border-top: 2px solid #ff0000; }
-        .theme-nao-amigavel input { background: #111; color: #ff0000; border: 2px solid #ff0000; }
-        .theme-nao-amigavel button { background: #ff0000; box-shadow: 0 0 15px #ff0000; }
+        input { flex: 1; outline: none; transition: 0.3s; }
+        button { border: none; width: 50px; height: 50px; cursor: pointer; font-size: 20px; transition: 0.3s; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
 <body class="theme-amigavel">
@@ -82,15 +83,15 @@
 
     <div id="sidebar">
         <div class="bg-particles" id="particle-container"></div>
-        <div id="toggle-btn">❤️</div>
-        <p style="font-weight: bold; margin-top: 20px;">Alternar Modo Neon</p>
+        <div id="toggle-btn">🌸</div>
+        <p style="font-weight: bold; margin-top: 20px;">Clique para mudar a realidade</p>
     </div>
 
     <div id="chat-container">
-        <div id="header">Conversas Amigáveis</div>
+        <div id="header">Modo Amigável 🌸</div>
         <div id="messages"></div>
         <div id="input-area">
-            <input type="text" id="msg-input" placeholder="Escreva aqui...">
+            <input type="text" id="msg-input" placeholder="Digite uma mensagem...">
             <button id="send-btn">➔</button>
         </div>
     </div>
@@ -99,7 +100,7 @@
     <script>
         const socket = io();
         let currentRoom = 'amigavel';
-        const user = "Usuário " + Math.floor(Math.random() * 999);
+        const user = "User_" + Math.floor(Math.random() * 999);
         let pInterval;
 
         function startParticles(emoji) {
@@ -109,9 +110,10 @@
                 p.className = 'particle';
                 p.innerText = emoji;
                 p.style.left = Math.random() * 100 + '%';
+                p.style.fontSize = (Math.random() * 20 + 10) + 'px';
                 document.getElementById('particle-container').appendChild(p);
                 setTimeout(() => p.remove(), 4000);
-            }, 300);
+            }, 400);
         }
 
         document.getElementById('toggle-btn').onclick = function() {
@@ -119,15 +121,15 @@
             if (currentRoom === 'amigavel') {
                 currentRoom = 'nao-amigavel';
                 document.body.className = 'theme-nao-amigavel';
-                this.innerText = '😈';
-                document.getElementById('header').innerText = 'Conversas Não Amigáveis';
-                startParticles('😈');
+                this.innerText = '💀';
+                document.getElementById('header').innerText = 'SISTEMA COMPROMETIDO 💀';
+                startParticles('⚡');
             } else {
                 currentRoom = 'amigavel';
                 document.body.className = 'theme-amigavel';
-                this.innerText = '❤️';
-                document.getElementById('header').innerText = 'Conversas Amigáveis';
-                startParticles('❤️');
+                this.innerText = '🌸';
+                document.getElementById('header').innerText = 'Modo Amigável 🌸';
+                startParticles('🌸');
             }
             socket.emit('join room', currentRoom);
             document.getElementById('messages').innerHTML = '';
@@ -152,7 +154,7 @@
             document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
         });
 
-        startParticles('❤️');
+        startParticles('🌸');
         socket.emit('join room', 'amigavel');
     </script>
 </body>
