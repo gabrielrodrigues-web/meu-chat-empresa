@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
-// Esta linha permite que o chat envie fotos e áudios maiores
+// Esta linha permite que o chat envie fotos e áudios maiores (até 10MB)
 const io = require('socket.io')(http, { maxHttpBufferSize: 1e7 });
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
@@ -44,4 +44,3 @@ const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => {
     console.log('CHAT ONLINE: Servidor rodando na porta ' + PORT);
 });
-
