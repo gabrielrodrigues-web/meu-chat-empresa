@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Minecraft Pro Chat: Game Edition</title>
+    <title>Minecraft Pro Chat: Sound Edition</title>
     <style>
         @import url('https://fonts.cdnfonts.com/css/minecraftia');
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
@@ -17,7 +17,6 @@
         .theme-amigavel #toggle-btn { filter: drop-shadow(0 0 15px #ff4d7d); }
         .theme-nao-amigavel #toggle-btn { filter: drop-shadow(0 0 20px #ff0000); }
 
-        /* Placar de Pontos */
         #score-board { margin-top: 20px; font-size: 20px; font-weight: bold; z-index: 11; padding: 10px 20px; border-radius: 8px; text-transform: uppercase; }
         .theme-amigavel #score-board { color: #ff4d7d; border: 3px solid #ffcada; background: #fff; }
         .theme-nao-amigavel #score-board { color: #ff0000; border: 2px solid #ff0000; background: #000; box-shadow: 0 0 10px #ff0000; }
@@ -59,6 +58,9 @@
     </style>
 </head>
 <body class="theme-amigavel">
+    <audio id="audio-pop" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3"></audio>
+    <audio id="audio-terror" src="https://assets.mixkit.co/active_storage/sfx/1118/1118-preview.mp3"></audio>
+
     <div id="sidebar">
         <div class="bg-particles" id="sidebar-particles"></div>
         <div id="toggle-btn">❤️</div>
@@ -84,16 +86,11 @@
         const LIFE_TIME = 5 * 60 * 1000;
         let particleInterval;
 
-        // SISTEMA DE PONTOS
         let scores = JSON.parse(localStorage.getItem('chat_scores') || '{"amigavel": 0, "infernal": 0}');
 
         function updateScoreDisplay() {
             const board = document.getElementById('score-board');
-            if (currentRoom === 'amigavel') {
-                board.innerText = `Corações: ${scores.amigavel}`;
-            } else {
-                board.innerText = `Almas: ${scores.infernal}`;
-            }
+            board.innerText = currentRoom === 'amigavel' ? `Corações: ${scores.amigavel}` : `Almas: ${scores.infernal}`;
             localStorage.setItem('chat_scores', JSON.stringify(scores));
         }
 
@@ -107,12 +104,19 @@
             p.style.animation = `moveUp ${(Math.random() * 2 + 3)}s linear forwards`;
             
             p.onclick = function() {
-                // Ganha ponto ao estourar
-                if (currentRoom === 'amigavel') scores.amigavel++;
-                else scores.infernal++;
+                if (currentRoom === 'amigavel') {
+                    scores.amigavel++;
+                    const sound = document.getElementById('audio-pop');
+                    sound.currentTime = 0;
+                    sound.play().catch(() => {});
+                } else {
+                    scores.infernal++;
+                    const sound = document.getElementById('audio-terror');
+                    sound.currentTime = 0;
+                    sound.play().catch(() => {});
+                }
                 
                 updateScoreDisplay();
-                
                 this.innerText = currentRoom === 'amigavel' ? '💥' : '🔥';
                 this.style.transform = 'scale(1.5)';
                 setTimeout(() => this.remove(), 150);
@@ -130,7 +134,6 @@
             }, 600);
         }
 
-        // PERSISTÊNCIA DE CHAT
         function saveMessage(msg) {
             let history = JSON.parse(localStorage.getItem('chat_history') || '[]');
             msg.timestamp = Date.now();
@@ -161,7 +164,6 @@
             document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
         }
 
-        // ENVIO
         function sendMessage() {
             const input = document.getElementById('msg-input');
             if (input.value.trim()) {
@@ -177,7 +179,6 @@
             if (msg.room === currentRoom) displayMessage(msg);
         });
 
-        // TROCA DE MODO
         document.getElementById('toggle-btn').onclick = function() {
             if (currentRoom === 'amigavel') {
                 currentRoom = 'nao-amigavel';
@@ -197,7 +198,6 @@
             renderChat();
         };
 
-        // ARQUIVOS
         function sendFile(input, type) {
             const file = input.files[0];
             if (file) {
@@ -210,7 +210,7 @@
         document.getElementById('img-input').onchange = function() { sendFile(this, 'image'); };
         document.getElementById('audio-input').onchange = function() { sendFile(this, 'audio'); };
 
-        // INIT
+        setInterval(renderChat, 15000);
         updateScoreDisplay();
         renderChat();
         startParticleEffects('❤️');
