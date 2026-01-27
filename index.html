@@ -3,24 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Dual Reality</title>
+    <title>Dual Chat - Reality Switch</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; transition: background 0.5s, color 0.5s; }
+        * { box-sizing: border-box; margin: 0; padding: 0; transition: background 0.4s, color 0.4s; }
         
         body { display: flex; height: 100vh; overflow: hidden; position: relative; font-family: 'Comic Sans MS', cursive; }
 
-        /* --- TREMOR --- */
+        /* --- EFEITO SHAKE --- */
         @keyframes shake {
             0% { transform: translate(0,0); }
-            20% { transform: translate(-10px, 5px); }
-            40% { transform: translate(10px, -5px); }
-            60% { transform: translate(-10px, -5px); }
+            25% { transform: translate(-10px, 5px); }
+            50% { transform: translate(10px, -5px); }
+            75% { transform: translate(-10px, -5px); }
             100% { transform: translate(0,0); }
         }
         .shake-effect { animation: shake 0.3s ease-in-out; }
 
-        /* --- PARTÍCULAS (Estrelas e Balões) --- */
+        /* --- PARTÍCULAS DE FUNDO --- */
         .particle {
             position: absolute;
             pointer-events: auto;
@@ -30,7 +30,7 @@
             cursor: pointer;
         }
         @keyframes rise {
-            from { transform: translateY(105vh); opacity: 1; }
+            from { transform: translateY(110vh); opacity: 1; }
             to { transform: translateY(-10vh); opacity: 0; }
         }
 
@@ -41,36 +41,37 @@
         #left-panel { flex: 1; display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden; border-right: 1px solid rgba(0,0,0,0.1); }
         .dark #left-panel { border-right: 1px solid #440000; background: radial-gradient(circle, #1a0000 0%, #000 70%); }
 
-        #chat-panel { flex: 1.2; display: flex; flex-direction: column; z-index: 5; background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px); }
-        .dark #chat-panel { background: rgba(0, 0, 0, 0.9); }
+        #chat-panel { flex: 1.2; display: flex; flex-direction: column; z-index: 5; background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(8px); }
+        .dark #chat-panel { background: rgba(0, 0, 0, 0.92); }
 
-        header { padding: 20px; text-align: center; font-weight: bold; font-size: 1.5em; border-bottom: 1px solid rgba(0,0,0,0.1); }
+        header { padding: 20px; text-align: center; font-weight: bold; font-size: 1.4em; border-bottom: 1px solid rgba(0,0,0,0.1); }
         .dark header { border-bottom: 1px solid #440000; text-shadow: 0 0 10px #ff0000; }
 
-        /* --- DOIS CHATS DIFERENTES --- */
-        .chat-container { flex: 1; overflow-y: auto; padding: 20px; display: none; flex-direction: column; gap: 10px; }
+        /* --- SISTEMA DE CHATS SEPARADOS --- */
+        .chat-container { flex: 1; overflow-y: auto; padding: 20px; display: none; flex-direction: column; gap: 12px; }
         .active-chat { display: flex; }
 
-        .message { max-width: 80%; padding: 12px; font-size: 14px; border-radius: 15px; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .message { max-width: 85%; padding: 12px; font-size: 14px; animation: fadeIn 0.3s forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Estilo Mensagens Fofas */
-        .fofo .msg-me { background: #ffb6c1; color: white; align-self: flex-end; }
-        .fofo .msg-others { background: white; border: 1px solid #ffb6c1; align-self: flex-start; }
+        /* Mensagens Fofas */
+        .fofo .msg-me { background: #ffb6c1; color: white; align-self: flex-end; border-radius: 15px 15px 0 15px; }
+        .fofo .msg-others { background: white; border: 1px solid #ffb6c1; align-self: flex-start; border-radius: 15px 15px 15px 0; }
 
-        /* Estilo Mensagens Dark */
-        .dark .msg-me { background: #400000; color: #ff0000; align-self: flex-end; border: 1px solid #ff0000; border-radius: 0; }
-        .dark .msg-others { background: #1a1a1a; color: #888; align-self: flex-start; border-radius: 0; }
+        /* Mensagens Nada Amigáveis */
+        .dark .msg-me { background: #300000; color: #ff0000; align-self: flex-end; border: 1px solid #ff0000; }
+        .dark .msg-others { background: #111; color: #666; align-self: flex-start; border-left: 3px solid #444; }
 
-        /* Input */
+        /* Input Area */
         #input-area { padding: 20px; display: flex; gap: 10px; border-top: 1px solid rgba(0,0,0,0.1); }
         .dark #input-area { border-top: 1px solid #440000; }
-        input { flex: 1; padding: 12px; border-radius: 20px; border: 1px solid #ccc; outline: none; }
+        input { flex: 1; padding: 12px; border-radius: 20px; border: 1px solid #ccc; outline: none; font-family: inherit; }
         .dark input { background: #000; border: 1px solid #440000; color: #ff0000; border-radius: 0; }
-        button { border: none; padding: 0 25px; font-weight: bold; cursor: pointer; border-radius: 20px; background: #ff69b4; color: white; }
+        button { border: none; padding: 0 25px; font-weight: bold; cursor: pointer; border-radius: 20px; background: #ff69b4; color: white; font-family: inherit; }
         .dark button { background: #660000; color: white; border-radius: 0; }
 
-        #toggle-btn { font-size: 120px; cursor: pointer; z-index: 10; animation: float 3s ease-in-out infinite; }
+        /* Botão Mestre */
+        #toggle-btn { font-size: 110px; cursor: pointer; z-index: 10; animation: float 3s ease-in-out infinite; user-select: none; }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
     </style>
 </head>
@@ -88,7 +89,7 @@
         <div id="messages-dark" class="chat-container"></div>
 
         <form id="input-area">
-            <input id="m" autocomplete="off" placeholder="Diga algo amigável..." />
+            <input id="m" autocomplete="off" placeholder="Diga algo fofo..." />
             <button>ENVIAR</button>
         </form>
     </div>
@@ -104,24 +105,24 @@
         // --- Gerador de Partículas (Estrelas ou Balões) ---
         function createParticle() {
             const isFofo = body.classList.contains('fofo');
-            const particle = document.createElement('div');
-            particle.className = 'particle';
-            particle.innerText = isFofo ? '✨' : '🎈';
-            particle.style.left = Math.random() * 100 + 'vw';
-            particle.style.fontSize = (Math.random() * 20 + 15) + 'px';
-            particle.style.animationDuration = (Math.random() * 2 + 3) + 's';
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.innerText = isFofo ? '✨' : '🎈';
+            p.style.left = Math.random() * 100 + 'vw';
+            p.style.fontSize = (Math.random() * 20 + 15) + 'px';
+            p.style.animationDuration = (Math.random() * 2 + 3) + 's';
             
-            particle.onmouseover = () => {
-                particle.innerText = isFofo ? '💥' : '🩸';
-                setTimeout(() => particle.remove(), 200);
+            p.onmouseover = () => {
+                p.innerText = isFofo ? '💥' : '🩸';
+                setTimeout(() => p.remove(), 250);
             };
 
-            document.body.appendChild(particle);
-            setTimeout(() => particle.remove(), 5000);
+            document.body.appendChild(p);
+            setTimeout(() => { if(p.parentNode) p.remove(); }, 5000);
         }
-        setInterval(createParticle, 200); // Muitas partículas
+        setInterval(createParticle, 250);
 
-        // --- Alternar entre Mundos ---
+        // --- Troca de Realidade ---
         toggleBtn.addEventListener('click', () => {
             body.classList.add('shake-effect');
             setTimeout(() => body.classList.remove('shake-effect'), 300);
@@ -133,42 +134,42 @@
                 body.className = 'dark';
                 toggleBtn.innerText = '🎈';
                 header.innerText = 'Conversas Nada Amigáveis';
-                inputField.placeholder = "Diga algo terrível...";
+                inputField.placeholder = "O que você quer?";
                 chatFofo.classList.remove('active-chat');
                 chatDark.classList.add('active-chat');
             } else {
                 body.className = 'fofo';
                 toggleBtn.innerText = '⭐';
                 header.innerText = 'Conversas Amigáveis';
-                inputField.placeholder = "Diga algo amigável...";
+                inputField.placeholder = "Diga algo fofo...";
                 chatDark.classList.remove('active-chat');
                 chatFofo.classList.add('active-chat');
             }
         });
 
-        // --- Enviar Mensagem ---
+        // --- Envio de Mensagem ---
         document.getElementById('input-area').onsubmit = (e) => {
             e.preventDefault();
             if (inputField.value.trim()) {
-                const mode = body.classList.contains('fofo') ? 'fofo' : 'dark';
+                const currentMode = body.classList.contains('fofo') ? 'fofo' : 'dark';
                 socket.emit('chat message', {
                     id: socket.id,
                     user: "Usuário " + userNumber,
                     text: inputField.value,
-                    mode: mode // Envia o modo atual da mensagem
+                    mode: currentMode
                 });
                 inputField.value = '';
             }
         };
 
-        // --- Receber Mensagem ---
+        // --- Recebimento de Mensagem ---
         socket.on('chat message', (msg) => {
             const item = document.createElement('div');
             const isMe = msg.id === socket.id;
             item.className = isMe ? 'message msg-me' : 'message msg-others';
             item.innerHTML = `<strong>${msg.user}:</strong> ${msg.text}`;
 
-            // Adiciona a mensagem ao chat correspondente ao modo em que ela foi enviada
+            // Direciona a mensagem para o chat correto baseado no modo que foi enviada
             const targetChat = msg.mode === 'fofo' 
                 ? document.getElementById('messages-fofo') 
                 : document.getElementById('messages-dark');
@@ -176,7 +177,7 @@
             targetChat.appendChild(item);
             targetChat.scrollTop = targetChat.scrollHeight;
 
-            // Auto-delete após 1 minuto
+            // Auto-delete (60s)
             setTimeout(() => {
                 item.style.opacity = '0';
                 setTimeout(() => item.remove(), 1000);
@@ -185,3 +186,4 @@
     </script>
 </body>
 </html>
+
