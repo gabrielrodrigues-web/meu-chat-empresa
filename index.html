@@ -3,106 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BIPOLAR CHAT - INSANE</title>
+    <title>BIPOLAR CHAT - ELITE</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-storage-compat.js"></script>
     <style>
-        * { box-sizing: border-box; outline: none; cursor: crosshair; }
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Courier New', monospace; overflow: hidden; background: #000; }
+        :root { --main-color: #ff0055; --bg-gradient: radial-gradient(circle, #fff 0%, #ffcbd5 100%); }
+        * { box-sizing: border-box; cursor: crosshair; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; overflow: hidden; background: #000; transition: background 0.5s; }
 
-        /* ANIMAÇÃO DE TREMIDA (SHAKE) */
-        @keyframes shake {
-            0% { transform: translate(1px, 1px) rotate(0deg); }
-            10% { transform: translate(-1px, -2px) rotate(-1deg); }
-            20% { transform: translate(-3px, 0px) rotate(1deg); }
-            30% { transform: translate(3px, 2px) rotate(0deg); }
-            40% { transform: translate(1px, -1px) rotate(1deg); }
-            50% { transform: translate(-1px, 2px) rotate(-1deg); }
-            100% { transform: translate(1px, 1px) rotate(0deg); }
-        }
-        .shake-effect { animation: shake 0.5s; animation-iteration-count: 1; }
+        /* EFEITO SHAKE */
+        .shake { animation: shakeAnim 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shakeAnim { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
 
         /* LOGIN */
         #login-screen { position: fixed; inset: 0; background: #000; z-index: 2000; display: flex; align-items: center; justify-content: center; }
-        .login-box { border: 2px solid #ff0055; padding: 40px; border-radius: 20px; text-align: center; background: #0a0a0a; box-shadow: 0 0 30px #ff0055; width: 350px; }
-        input { width: 100%; padding: 15px; margin: 10px 0; background: #000; border: 1px solid #ff0055; color: #fff; border-radius: 10px; }
+        .login-box { border: 2px solid var(--main-color); padding: 40px; border-radius: 30px; text-align: center; background: #050505; box-shadow: 0 0 50px var(--main-color); width: 380px; }
+        .login-box h1 { color: #fff; text-shadow: 0 0 15px var(--main-color); margin-bottom: 30px; letter-spacing: 5px; }
+        input { width: 100%; padding: 15px; margin: 12px 0; background: #000; border: 1px solid var(--main-color); color: #fff; border-radius: 12px; font-size: 16px; }
 
-        /* ESTRUTURA */
-        #main-app { display: none; height: 100vh; position: relative; }
-        .mode-container { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        /* APP LAYOUT */
+        #main-app { display: none; height: 100vh; position: relative; background: var(--bg-gradient); }
+        .center-stage { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
         
-        .esperanca-bg { background: radial-gradient(circle, #fff 0%, #ffcbd5 100%); color: #ff0055; }
-        .ladrao-bg { background: radial-gradient(circle, #2a0000 0%, #000 100%); color: #ff0000; }
+        .giant-icon { font-size: 220px; filter: drop-shadow(0 0 30px var(--main-color)); transition: 0.5s; user-select: none; pointer-events: auto; }
+        .giant-icon:active { transform: scale(0.9); }
 
-        /* ÍCONES GIGANTES */
-        .giant-icon { font-size: 200px; z-index: 10; filter: drop-shadow(0 0 40px rgba(255, 0, 85, 0.6)); user-select: none; transition: 0.3s; }
-        .giant-icon:hover { transform: scale(1.1); }
-        
-        .mode-label { font-size: 32px; font-weight: bold; margin-top: 20px; z-index: 10; letter-spacing: 5px; text-transform: uppercase; }
-        .score-display { font-size: 60px; font-weight: bold; z-index: 10; font-family: 'Arial Black', sans-serif; }
+        .score-board { font-size: 80px; font-weight: 900; color: var(--main-color); text-shadow: 0 0 20px rgba(0,0,0,0.2); margin-top: -20px; z-index: 5; }
 
-        /* CAIXA DE CHAT MAIOR */
-        .chat-dock {
-            position: absolute; right: 40px; bottom: 40px; width: 450px; height: 600px;
-            background: rgba(0,0,0,0.95); border: 3px solid #ff0055; border-radius: 25px;
-            display: flex; flex-direction: column; z-index: 100; box-shadow: 0 0 40px rgba(0,0,0,1);
+        /* CHAT LATERAL ELITE */
+        .chat-sidebar {
+            position: absolute; right: 30px; top: 10%; bottom: 10%; width: 420px;
+            background: rgba(0, 0, 0, 0.85); border: 2px solid var(--main-color);
+            border-radius: 30px; display: flex; flex-direction: column; z-index: 100;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5); backdrop-filter: blur(10px);
         }
-        #messages-list { flex: 1; overflow-y: auto; padding: 20px; color: #fff; font-size: 16px; scroll-behavior: smooth; }
-        .msg-line { margin-bottom: 15px; border-left: 3px solid #ff0055; padding-left: 12px; animation: fadeIn 0.5s; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+        #msg-box { flex: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
+        .msg { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border-left: 4px solid var(--main-color); animation: slideIn 0.3s ease; position: relative; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+        
+        .msg-user { font-weight: bold; font-size: 13px; color: var(--main-color); margin-bottom: 5px; display: block; }
+        .msg-text { color: #fff; font-size: 15px; line-height: 1.4; }
 
-        .input-group { display: flex; padding: 15px; background: #111; border-radius: 0 0 25px 25px; align-items: center; gap: 10px; }
-        .input-group input { flex: 1; background: transparent; border: none; color: #fff; font-size: 16px; }
+        /* CONTROLES */
+        .controls { position: fixed; top: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 20px; z-index: 500; }
+        .btn-mode { padding: 15px 35px; border-radius: 50px; border: 2px solid var(--main-color); background: #000; color: var(--main-color); font-weight: bold; transition: 0.3s; }
+        .btn-mode.active { background: var(--main-color); color: #fff; box-shadow: 0 0 30px var(--main-color); }
 
-        /* BOTÕES TOPO */
-        .nav-top { position: fixed; top: 25px; left: 50%; transform: translateX(-50%); z-index: 500; display: flex; gap: 20px; }
-        .btn-nav { padding: 12px 30px; border-radius: 40px; border: 2px solid #ff0055; cursor: pointer; font-weight: bold; background: #000; color: #ff0055; transition: 0.4s; }
-        .btn-nav.active { background: #ff0055; color: #fff; box-shadow: 0 0 25px #ff0055; }
-
-        /* PARTÍCULAS */
-        .part { position: absolute; cursor: pointer; font-size: 50px; z-index: 5; opacity: 0.8; user-select: none; }
+        .input-area { padding: 20px; background: rgba(0,0,0,0.3); border-radius: 0 0 30px 30px; display: flex; gap: 10px; }
+        .input-area input { margin: 0; background: rgba(255,255,255,0.1); border: none; }
+        
+        /* PARTICULAS */
+        .particle { position: absolute; font-size: 45px; z-index: 1; opacity: 0.8; filter: drop-shadow(0 0 10px var(--main-color)); }
         
         .hidden { display: none !important; }
     </style>
 </head>
-<body id="master-body">
+<body id="body-node">
 
     <div id="login-screen">
         <div class="login-box">
-            <h1 style="color:#fff; text-shadow:0 0 10px #ff0055">BIPOLAR ACCESS</h1>
-            <input type="text" id="user" placeholder="USUÁRIO">
-            <input type="password" id="pass" placeholder="SENHA">
-            <button onclick="logar()" style="width:100%; padding:15px; background:#40001a; color:#fff; border:1px solid #ff0055; border-radius:10px; cursor:pointer">ENTRAR</button>
+            <h1>BIPOLAR</h1>
+            <input type="text" id="user" placeholder="LOGIN">
+            <input type="password" id="pass" placeholder="PASSWORD">
+            <button onclick="logar()" style="width:100%; padding:15px; background:transparent; color:white; border:2px solid var(--main-color); border-radius:12px; font-weight:bold;">SISTEMA ENTRAR</button>
         </div>
     </div>
 
-    <div class="nav-top" id="nav" style="display:none">
-        <button id="nav-esp" class="btn-nav active" onclick="switchMode('esp')">ESPERANÇA</button>
-        <button id="nav-lad" class="btn-nav" onclick="switchMode('lad')">LADRÃO DE ALMAS</button>
+    <div class="controls" id="nav" style="display:none">
+        <button id="btn-esp" class="btn-mode active" onclick="setMode('esp')">ESPERANÇA 💖</button>
+        <button id="btn-lad" class="btn-mode" onclick="setMode('lad')">LADRÃO 💀</button>
     </div>
 
     <div id="main-app">
-        <div id="view-esp" class="mode-container esperanca-bg">
-            <div class="giant-icon">💖</div>
-            <div class="mode-label">Modo Esperança</div>
-            <div class="score-display" id="scr-esp">0</div>
+        <div class="center-stage">
+            <div id="big-icon" class="giant-icon">💖</div>
+            <div id="score" class="score-board">0</div>
         </div>
 
-        <div id="view-lad" class="mode-container ladrao-bg hidden">
-            <div class="giant-icon">💀</div>
-            <div class="mode-label" style="color:#ff0000">Ladrão de Almas</div>
-            <div class="score-display" id="scr-lad" style="color:#ff0000">0</div>
-        </div>
-
-        <div class="chat-dock" id="chat-ui">
-            <div id="messages-list"></div>
-            <div class="input-group">
-                <span onclick="document.getElementById('f-up').click()" style="cursor:pointer">📸</span>
-                <input type="text" id="msg-input" placeholder="Mensagem rápida (8 min)...">
-                <button onclick="enviar()" style="background:#ff0055; border:none; color:#fff; padding:10px 20px; border-radius:10px; cursor:pointer; font-weight:bold">SEND</button>
-                <input type="file" id="f-up" class="hidden" onchange="upload(this.files[0])">
+        <div class="chat-sidebar">
+            <div id="msg-box"></div>
+            <div class="input-area">
+                <button onclick="document.getElementById('f').click()" style="background:none; border:none; font-size:20px;">📷</button>
+                <input type="text" id="m-in" placeholder="Sussurre aqui...">
+                <button onclick="enviar()" style="background:var(--main-color); border:none; color:white; padding:10px 20px; border-radius:10px; font-weight:bold;">ENVIAR</button>
+                <input type="file" id="f" class="hidden" onchange="upload(this.files[0])">
             </div>
         </div>
     </div>
@@ -122,13 +108,14 @@
         const db = firebase.database();
         const storage = firebase.storage();
 
-        let currentChannel = 'esperanca';
-        let ptsEsp = 0, ptsLad = 0;
+        let modo = 'esp';
+        let pontos = { esp: 0, lad: 0 };
+        const OITO_MINUTOS = 8 * 60 * 1000;
 
         function logar() {
             const u = document.getElementById('user').value;
             const p = document.getElementById('pass').value;
-            if(!u || p.length < 6) return alert("Verifique os dados!");
+            if(!u || p.length < 6) return alert("Dados inválidos!");
             const email = u.trim().toLowerCase() + "@bipolar.com";
             auth.signInWithEmailAndPassword(email, p).catch(() => auth.createUserWithEmailAndPassword(email, p));
         }
@@ -138,109 +125,116 @@
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('main-app').style.display = 'block';
                 document.getElementById('nav').style.display = 'flex';
-                switchMode('esp');
-                setInterval(spawnParticle, 1000);
+                setMode('esp');
+                setInterval(spawn, 800);
+                setInterval(limparChat, 10000); // Checa mensagens velhas a cada 10s
             }
         });
 
-        function switchMode(m) {
-            currentChannel = m === 'esp' ? 'esperanca' : 'ladrao';
+        function setMode(m) {
+            modo = m;
+            const root = document.documentElement;
+            const body = document.getElementById('body-node');
             
-            // TREMIDA DE TELA
-            const body = document.getElementById('master-body');
-            body.classList.remove('shake-effect');
-            void body.offsetWidth; // Reset animação
-            body.classList.add('shake-effect');
+            // SHAKE EFFECT
+            body.classList.remove('shake');
+            void body.offsetWidth;
+            body.classList.add('shake');
 
-            document.getElementById('view-esp').classList.toggle('hidden', m !== 'esp');
-            document.getElementById('view-lad').classList.toggle('hidden', m !== 'lad');
-            document.getElementById('nav-esp').classList.toggle('active', m === 'esp');
-            document.getElementById('nav-lad').classList.toggle('active', m === 'lad');
+            if(m === 'esp') {
+                root.style.setProperty('--main-color', '#ff0055');
+                root.style.setProperty('--bg-gradient', 'radial-gradient(circle, #fff 0%, #ffcbd5 100%)');
+                document.getElementById('big-icon').innerText = '💖';
+            } else {
+                root.style.setProperty('--main-color', '#ff0000');
+                root.style.setProperty('--bg-gradient', 'radial-gradient(circle, #2a0000 0%, #000 100%)');
+                document.getElementById('big-icon').innerText = '💀';
+            }
+
+            document.getElementById('btn-esp').classList.toggle('active', m === 'esp');
+            document.getElementById('btn-lad').classList.toggle('active', m === 'lad');
+            document.getElementById('score').innerText = pontos[m];
             
-            const color = m === 'esp' ? '#ff0055' : '#ff0000';
-            document.getElementById('chat-ui').style.borderColor = color;
+            loadMessages();
+        }
 
-            document.getElementById('messages-list').innerHTML = "";
-            db.ref("bipolar_v5/" + currentChannel).off();
-            db.ref("bipolar_v5/" + currentChannel).limitToLast(30).on("child_added", snap => {
-                renderMsg(snap.val(), snap.key);
+        function loadMessages() {
+            const box = document.getElementById('msg-box');
+            box.innerHTML = "";
+            const canal = modo === 'esp' ? 'esperanca' : 'ladrao';
+            db.ref("bipolar_elite/" + canal).off();
+            db.ref("bipolar_elite/" + canal).limitToLast(40).on("child_added", snap => {
+                const d = snap.val();
+                if (Date.now() - d.time < OITO_MINUTOS) {
+                    addMsgToUI(d, snap.key);
+                }
             });
         }
 
-        function renderMsg(d, key) {
-            const now = Date.now();
-            const age = now - d.timestamp;
-            const eightMins = 8 * 60 * 1000;
+        function addMsgToUI(d, key) {
+            const box = document.getElementById('msg-box');
+            const div = document.createElement('div');
+            div.className = 'msg';
+            div.id = "msg-" + key;
+            let content = d.type === 'img' ? `<img src="${d.url}" style="width:100%; border-radius:10px;">` : d.text;
+            div.innerHTML = `<span class="msg-user">${d.user}</span><div class="msg-text">${content}</div>`;
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
+        }
 
-            if (age > eightMins) return; // Se já passou de 8 min, nem renderiza
-
-            const list = document.getElementById('messages-list');
-            const color = currentChannel === 'esperanca' ? '#ff0055' : '#ff0000';
-            const id = "msg-" + key;
-            
-            let content = d.type === 'img' ? `<img src="${d.url}" style="width:100%; border-radius:15px; margin-top:5px;">` : d.text;
-            
-            list.innerHTML += `<div class="msg-line" id="${id}"><b style="color:${color}">${d.user}:</b><br>${content}</div>`;
-            list.scrollTop = list.scrollHeight;
-
-            // TIMER PARA SUMIR
-            setTimeout(() => {
-                const el = document.getElementById(id);
-                if(el) {
-                    el.style.opacity = '0';
-                    setTimeout(() => el.remove(), 500);
-                }
-            }, eightMins - age);
+        function limparChat() {
+            document.querySelectorAll('.msg').forEach(el => {
+                // Aqui você pode adicionar lógica para remover do DOM se quiser, 
+                // mas a função loadMessages já filtra ao entrar.
+            });
         }
 
         function enviar() {
-            const val = document.getElementById('msg-input').value;
-            if(val.trim()) {
-                db.ref("bipolar_v5/" + currentChannel).push({
-                    user: auth.currentUser.email.split('@')[0],
-                    text: val,
-                    type: 'text',
-                    timestamp: Date.now()
-                });
-                document.getElementById('msg-input').value = "";
-            }
+            const val = document.getElementById('m-in').value;
+            if(!val.trim()) return;
+            const canal = modo === 'esp' ? 'esperanca' : 'ladrao';
+            db.ref("bipolar_elite/" + canal).push({
+                user: auth.currentUser.email.split('@')[0],
+                text: val,
+                time: Date.now(),
+                type: 'text'
+            });
+            document.getElementById('m-in').value = "";
         }
 
-        function spawnParticle() {
-            const isEsp = currentChannel === 'esperanca';
+        function spawn() {
             const p = document.createElement('div');
-            p.className = 'part';
-            p.innerHTML = isEsp ? '💖' : '💀';
-            p.style.left = (Math.random() * 40 + 30) + '%';
+            p.className = 'particle';
+            p.innerHTML = modo === 'esp' ? '💖' : '💀';
+            p.style.left = (Math.random() * 30 + 35) + '%';
             p.style.bottom = '-10%';
             
             p.onclick = () => {
-                // PONTUAÇÃO DE 1 EM 1
-                if(isEsp) { ptsEsp++; document.getElementById('scr-esp').innerText = ptsEsp; }
-                else { ptsLad++; document.getElementById('scr-lad').innerText = ptsLad; }
-                p.remove();
+                pontos[modo]++;
+                document.getElementById('score').innerText = pontos[modo];
+                p.style.transform = "scale(2)";
+                p.style.opacity = "0";
+                setTimeout(() => p.remove(), 200);
             };
 
-            const container = isEsp ? 'view-esp' : 'view-lad';
-            document.getElementById(container).appendChild(p);
-
+            document.getElementById('main-app').appendChild(p);
             let b = -10;
             let move = setInterval(() => {
-                b += 0.5;
-                p.style.bottom = b + '%';
+                b += 0.7; p.style.bottom = b + '%';
                 if(b > 110) { clearInterval(move); p.remove(); }
-            }, 20);
+            }, 30);
         }
 
         function upload(f) {
             if(!f) return;
-            const ref = storage.ref(`bipolar_v5/${Date.now()}`);
+            const ref = storage.ref(`bipolar_elite/${Date.now()}`);
             ref.put(f).then(s => s.ref.getDownloadURL()).then(url => {
-                db.ref("bipolar_v5/" + currentChannel).push({
+                const canal = modo === 'esp' ? 'esperanca' : 'ladrao';
+                db.ref("bipolar_elite/" + canal).push({
                     user: auth.currentUser.email.split('@')[0],
                     url: url,
-                    type: 'img',
-                    timestamp: Date.now()
+                    time: Date.now(),
+                    type: 'img'
                 });
             });
         }
