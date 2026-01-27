@@ -6,55 +6,69 @@
     <title>BIPOLAR - ELITE</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        :root { --main: #ff0055; --bg: radial-gradient(circle, #fff 0%, #ffcbd5 100%); }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-        body { background: #000; height: 100vh; overflow: hidden; }
+        :root { --main: #ff0055; --bg: #000; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         
+        body { background: var(--bg); height: 100vh; overflow: hidden; color: white; transition: 0.5s; }
+
+        /* TELA DE LOGIN */
         #login-screen { position: fixed; inset: 0; background: #000; z-index: 1000; display: flex; align-items: center; justify-content: center; }
-        .login-box { border: 2px solid var(--main); padding: 30px; border-radius: 20px; text-align: center; background: #050505; width: 320px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; background: #111; border: 1px solid var(--main); color: #fff; border-radius: 8px; }
+        .login-box { border: 2px solid var(--main); padding: 40px; border-radius: 25px; text-align: center; background: #0a0a0a; width: 350px; box-shadow: 0 0 30px var(--main); }
+        input { width: 100%; padding: 15px; margin: 15px 0; background: #151515; border: 1px solid #333; color: #fff; border-radius: 12px; outline: none; }
+        input:focus { border-color: var(--main); }
         
-        #main-app { display: none; height: 100vh; background: var(--bg); position: relative; }
-        .nav-bar { position: absolute; top: 20px; width: 100%; display: flex; justify-content: center; gap: 10px; z-index: 10; }
-        .nav-btn { padding: 10px 20px; border-radius: 20px; border: none; cursor: pointer; font-weight: bold; background: rgba(0,0,0,0.5); color: #fff; }
-        .nav-btn.active { background: var(--main); box-shadow: 0 0 15px var(--main); }
+        /* APP PRINCIPAL */
+        #main-app { display: none; height: 100vh; display: flex; }
 
-        .chat-container { 
-            position: absolute; right: 20px; bottom: 20px; width: 350px; height: 80vh; 
-            background: rgba(0,0,0,0.8); border: 2px solid var(--main); border-radius: 20px; 
-            display: flex; flex-direction: column; backdrop-filter: blur(10px);
+        /* ÁREA DO CONTEÚDO (ESQUERDA) */
+        .stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+        .nav-bar { position: absolute; top: 30px; display: flex; gap: 15px; }
+        .nav-btn { padding: 12px 25px; border-radius: 30px; border: 2px solid var(--main); cursor: pointer; font-weight: bold; background: transparent; color: #fff; transition: 0.3s; }
+        .nav-btn.active { background: var(--main); box-shadow: 0 0 20px var(--main); }
+
+        #big-icon { font-size: 180px; cursor: pointer; user-select: none; filter: drop-shadow(0 0 20px var(--main)); transition: 0.2s; }
+        #big-icon:active { transform: scale(0.9); }
+        #score { font-size: 60px; margin-top: 20px; font-weight: bold; color: var(--main); text-shadow: 0 0 10px var(--main); }
+
+        /* CHAT LATERAL (DIREITA) */
+        .chat-sidebar { 
+            width: 380px; background: rgba(10, 10, 10, 0.95); border-left: 2px solid var(--main); 
+            display: flex; flex-direction: column; backdrop-filter: blur(15px);
         }
-        #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 10px; border-left: 4px solid var(--main); color: #fff; }
-        .input-area { padding: 15px; display: flex; gap: 5px; }
-        .send-btn { background: var(--main); color: #fff; border: none; padding: 0 15px; border-radius: 8px; cursor: pointer; }
-
-        .stage { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        #big-icon { font-size: 150px; cursor: pointer; user-select: none; }
+        .chat-header { padding: 20px; text-align: center; border-bottom: 1px solid #222; font-weight: bold; letter-spacing: 2px; }
+        #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+        .msg { background: #1a1a1a; padding: 12px; border-radius: 15px; border-left: 4px solid var(--main); font-size: 14px; animation: slide In 0.3s ease; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+        
+        .input-area { padding: 20px; background: #0a0a0a; display: flex; gap: 10px; }
+        .send-btn { background: var(--main); color: #fff; border: none; padding: 0 20px; border-radius: 12px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
     <div id="login-screen">
         <div class="login-box">
-            <h2 style="color:white; margin-bottom:15px">BIPOLAR</h2>
-            <input type="text" id="nick" placeholder="Seu Nome">
-            <button onclick="entrar()" style="width:100%; padding:12px; background:var(--main); color:#fff; border:none; border-radius:8px; cursor:pointer;">ENTRAR</button>
+            <h1 style="color:var(--main); margin-bottom:10px; letter-spacing:5px">BIPOLAR</h1>
+            <p style="color:#666; font-size:12px">ELITE COMMUNICATION SYSTEM</p>
+            <input type="text" id="nick" placeholder="Digite seu codinome...">
+            <button onclick="entrar()" style="width:100%; padding:15px; background:var(--main); color:#fff; border:none; border-radius:12px; cursor:pointer; font-weight:bold; margin-top:10px">ACESSAR SISTEMA</button>
         </div>
     </div>
 
-    <div id="main-app">
-        <div class="nav-bar">
-            <button id="btn-esp" class="nav-btn active" onclick="mudar('esp')">Esperança 💖</button>
-            <button id="btn-lad" class="nav-btn" onclick="mudar('lad')">Ladrão 💀</button>
-        </div>
+    <div id="main-app" style="display: none;">
         <div class="stage">
+            <div class="nav-bar">
+                <button id="btn-esp" class="nav-btn active" onclick="mudar('esp')">MODO ESPERANÇA 💖</button>
+                <button id="btn-lad" class="nav-btn" onclick="mudar('lad')">LADRÃO DE ALMAS 💀</button>
+            </div>
             <div id="big-icon" onclick="ponto()">💖</div>
-            <h1 id="score" style="font-size: 50px; color: var(--main)">0</h1>
+            <div id="score">0</div>
         </div>
-        <div class="chat-container">
+
+        <div class="chat-sidebar">
+            <div class="chat-header" id="chat-title">COMUNICAÇÃO CRIPTOGRAFADA</div>
             <div id="messages"></div>
             <div class="input-area">
-                <input type="text" id="msg-in" placeholder="Mensagem...">
+                <input type="text" id="msg-in" placeholder="Escreva uma mensagem..." onkeypress="if(event.key==='Enter') enviar()">
                 <button class="send-btn" onclick="enviar()">SEND</button>
             </div>
         </div>
@@ -67,9 +81,9 @@
 
         function entrar() {
             user = document.getElementById('nick').value;
-            if(!user) return;
+            if(!user) return alert("Digite um nome!");
             document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('main-app').style.display = 'block';
+            document.getElementById('main-app').style.display = 'flex';
             socket.emit('join room', sala);
         }
 
@@ -78,12 +92,12 @@
             const root = document.documentElement;
             if(m === 'esp') {
                 root.style.setProperty('--main', '#ff0055');
-                root.style.setProperty('--bg', 'radial-gradient(circle, #fff 0%, #ffcbd5 100%)');
                 document.getElementById('big-icon').innerText = '💖';
+                document.body.style.background = "#000"; 
             } else {
                 root.style.setProperty('--main', '#ff0000');
-                root.style.setProperty('--bg', 'radial-gradient(circle, #2a0000 0%, #000 100%)');
                 document.getElementById('big-icon').innerText = '💀';
+                document.body.style.background = "#1a0000";
             }
             document.getElementById('btn-esp').classList.toggle('active', m === 'esp');
             document.getElementById('btn-lad').classList.toggle('active', m === 'lad');
@@ -100,7 +114,7 @@
 
         socket.on('chat message', (data) => {
             const m = document.getElementById('messages');
-            m.innerHTML += `<div class="msg"><b>${data.user}:</b><br>${data.text}</div>`;
+            m.innerHTML += `<div class="msg"><b style="color:var(--main)">${data.user}:</b><br>${data.text}</div>`;
             m.scrollTop = m.scrollHeight;
         });
 
