@@ -1,7 +1,7 @@
 {
   "name": "meu-chat",
   "version": "1.0.0",
-  "description": "",
+  "description": "Chat empresarial simples",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
