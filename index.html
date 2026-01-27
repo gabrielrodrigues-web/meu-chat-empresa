@@ -3,87 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bipolar Chat 2.0</title>
+    <title>Bipolar Chat - Dual Mode</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Courier New', monospace; overflow: hidden; background: #000; color: white; }
-        
+        * { box-sizing: border-box; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Courier New', monospace; overflow: hidden; transition: 0.5s; }
+
         /* TELA DE LOGIN */
         #login-screen {
-            position: fixed; inset: 0; background: radial-gradient(circle, #200, #000);
-            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000;
+            position: fixed; inset: 0; background: #000; z-index: 1000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
-        .login-box {
-            background: rgba(0,0,0,0.9); padding: 40px; border: 2px solid #ff0055; border-radius: 20px;
-            box-shadow: 0 0 30px #ff0055; text-align: center; width: 320px;
-        }
-        input { width: 100%; padding: 12px; margin: 10px 0; background: #111; border: 1px solid #ff0055; color: #fff; border-radius: 5px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #ff0055; border: none; color: #fff; font-weight: bold; cursor: pointer; border-radius: 5px; }
+        .login-box { border: 2px solid #ff0055; padding: 30px; border-radius: 20px; text-align: center; background: #0a0a0a; box-shadow: 0 0 20px #ff0055; }
 
         /* INTERFACE PRINCIPAL */
-        #main-app { display: none; height: 100vh; flex-direction: column; position: relative; }
-        
-        /* CANAL 1 (ROSA) e CANAL 2 (VERMELHO/PRETO) */
-        .theme-canal1 { background: #0d0005; border-color: #ff0055; }
-        .theme-canal2 { background: #050000; border-color: #ff0000; }
+        #main-app { display: none; height: 100vh; flex-direction: column; align-items: center; justify-content: center; position: relative; }
 
-        .header { display: flex; justify-content: space-between; padding: 15px; background: rgba(0,0,0,0.8); z-index: 10; border-bottom: 2px solid #ff0055; }
-        .score-board { font-size: 1.2rem; color: #ff0055; text-shadow: 0 0 10px #ff0055; }
+        /* LAYOUT CANAL 1 (FOFO) */
+        .canal1-mode { background: #fff1f5; color: #ff0055; }
+        .canal1-mode .chat-box { border: 4px solid #ff0055; background: rgba(255, 255, 255, 0.9); box-shadow: 0 0 20px #ffb6c1; }
 
-        #chat-container { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+        /* LAYOUT CANAL 2 (TERROR) */
+        .canal2-mode { background: #050000; color: #ff0000; }
+        .canal2-mode .chat-box { border: 4px solid #330000; background: rgba(10, 0, 0, 0.9); box-shadow: 0 0 30px #ff0000; }
+
+        /* ELEMENTOS DO CHAT */
+        .chat-box { width: 400px; height: 500px; border-radius: 20px; display: flex; flex-direction: column; z-index: 10; overflow: hidden; }
+        #messages { flex: 1; overflow-y: auto; padding: 15px; font-weight: bold; }
+        .input-area { display: flex; padding: 10px; background: rgba(0,0,0,0.1); }
+        input { flex: 1; padding: 10px; border-radius: 5px; border: 1px solid #ccc; outline: none; }
         
-        .chat-window {
-            width: 90%; max-width: 400px; height: 60%; background: rgba(0,0,0,0.85);
-            border: 2px solid #ff0055; border-radius: 15px; display: flex; flex-direction: column; z-index: 20;
+        /* BOTÕES DE TROCA */
+        .nav-channels { position: absolute; top: 20px; display: flex; gap: 10px; z-index: 20; }
+        .btn-ch { padding: 10px 20px; cursor: pointer; font-weight: bold; border-radius: 30px; border: 2px solid; }
+
+        /* PONTUAÇÃO */
+        .score-box { position: absolute; top: 20px; right: 20px; font-size: 24px; font-weight: bold; z-index: 20; text-shadow: 2px 2px #000; }
+
+        /* EMOJIS FLUTUANTES */
+        .floating {
+            position: absolute; cursor: pointer; font-size: 40px; user-select: none;
+            z-index: 1; transition: 0.2s;
         }
-        #messages { flex: 1; overflow-y: auto; padding: 15px; }
-        .msg { margin-bottom: 10px; font-size: 0.9rem; border-bottom: 1px solid #222; padding-bottom: 5px; }
-        .msg img { max-width: 100%; border-radius: 10px; margin-top: 5px; }
-        
-        .input-area { display: flex; padding: 10px; gap: 5px; background: #000; }
-
-        /* EFEITOS DE ESTOURO */
-        .particle {
-            position: absolute; pointer-events: auto; cursor: pointer;
-            font-size: 30px; user-select: none; z-index: 5;
-            transition: transform 0.2s;
-        }
-        .particle:active { transform: scale(1.5); }
-
-        .hidden { display: none !important; }
     </style>
 </head>
-<body class="theme-canal1">
+<body class="canal1-mode">
 
     <div id="login-screen">
         <div class="login-box">
-            <h1 style="color: #ff0055;">BIPOLAR CHAT</h1>
-            <input type="text" id="user-in" placeholder="Nome de Usuário">
-            <input type="password" id="pass-in" placeholder="Senha (6 dígitos)">
-            <button onclick="fazerLogin()">ACESSAR CANAIS</button>
-            <p id="log-err" style="color:red; font-size:12px;"></p>
+            <h1 style="color:#ff0055">BIPOLAR ACCESS</h1>
+            <input type="text" id="user" placeholder="Usuário"><br><br>
+            <input type="password" id="pass" placeholder="Senha (6 dígitos)"><br><br>
+            <button onclick="logar()" style="background:#ff0055; color:white; border:none; padding:10px 20px; cursor:pointer; width:100%">ENTRAR</button>
         </div>
     </div>
 
     <div id="main-app">
-        <div class="header" id="app-header">
-            <div class="score-board">PONTOS: <span id="pontuacao">0</span></div>
-            <div>
-                <button onclick="mudarCanal('canal1')" id="btn-c1" style="width:auto; padding:5px 10px;">CANAL 1 💖</button>
-                <button onclick="mudarCanal('canal2')" id="btn-c2" style="width:auto; padding:5px 10px; background:#444;">CANAL 2 💀</button>
-            </div>
-            <button onclick="auth.signOut()" style="width:auto; background:#222;">SAIR</button>
+        <div class="score-box">PONTOS: <span id="pontos">0</span></div>
+
+        <div class="nav-channels">
+            <button class="btn-ch" onclick="mudarCanal('canal1')" style="background:#ffb6c1; color:#ff0055;">MODO FOFO 💖</button>
+            <button class="btn-ch" onclick="mudarCanal('canal2')" style="background:#330000; color:#ff0000;">MODO TERROR 💀</button>
         </div>
 
-        <div id="chat-container">
-            <div class="chat-window" id="window">
-                <div id="messages"></div>
-                <div class="input-area">
-                    <input type="text" id="msg-in" placeholder="Mensagem ou link de imagem/audio...">
-                    <button onclick="enviar()" style="width:80px;">ENVIAR</button>
-                </div>
+        <div class="chat-box">
+            <div style="padding: 10px; text-align: center; font-weight: bold; border-bottom: 1px solid #eee;" id="chat-header">CANAL 1 - AMOR</div>
+            <div id="messages"></div>
+            <div class="input-area">
+                <input type="text" id="msg" placeholder="Diga algo...">
+                <button onclick="enviar()" style="margin-left:5px; cursor:pointer">ENVIAR</button>
             </div>
         </div>
     </div>
@@ -105,12 +95,11 @@
         let canalAtual = 'canal1';
         let pontos = 0;
 
-        // LOGIN COM NOME SIMPLES
-        function fazerLogin() {
-            const u = document.getElementById('user-in').value;
-            const p = document.getElementById('pass-in').value;
-            if(!u || p.length < 6) return document.getElementById('log-err').innerText = "Senha deve ter 6 dígitos";
-            
+        // LOGIN
+        function logar() {
+            const u = document.getElementById('user').value;
+            const p = document.getElementById('pass').value;
+            if(!u || p.length < 6) return alert("Preencha corretamente!");
             const email = u.trim().toLowerCase() + "@bipolar.com";
             auth.signInWithEmailAndPassword(email, p).catch(() => auth.createUserWithEmailAndPassword(email, p));
         }
@@ -120,92 +109,82 @@
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('main-app').style.display = 'flex';
                 mudarCanal('canal1');
-            } else {
-                document.getElementById('login-screen').style.display = 'flex';
-                document.getElementById('main-app').style.display = 'none';
+                startParticles();
             }
         });
 
-        // TROCA DE CANAL
-        function mudarCanal(c) {
-            canalAtual = c;
-            const isC1 = c === 'canal1';
-            document.body.className = isC1 ? 'theme-canal1' : 'theme-canal2';
-            document.getElementById('window').style.borderColor = isC1 ? '#ff0055' : '#ff0000';
-            document.getElementById('app-header').style.borderColor = isC1 ? '#ff0055' : '#ff0000';
+        // TROCA DE CANAL (AQUI A MÁGICA ACONTECE)
+        function mudarCanal(ch) {
+            canalAtual = ch;
+            const body = document.body;
+            const header = document.getElementById('chat-header');
             
+            if(ch === 'canal1') {
+                body.className = 'canal1-mode';
+                header.innerText = "CANAL 1 - AMOR 💖";
+            } else {
+                body.className = 'canal2-mode';
+                header.innerText = "CANAL 2 - TERROR 💀";
+            }
+
+            // Carrega mensagens específicas deste canal
             document.getElementById('messages').innerHTML = "";
-            db.ref("msgs/" + canalAtual).off();
-            db.ref("msgs/" + canalAtual).limitToLast(30).on("child_added", snap => {
-                exibirMensagem(snap.val());
+            db.ref("chat_" + ch).off();
+            db.ref("chat_" + ch).limitToLast(20).on("child_added", snap => {
+                const d = snap.val();
+                const mDiv = document.getElementById('messages');
+                mDiv.innerHTML += `<div><b style="color:#ff0055">${d.user}:</b> ${d.text}</div>`;
+                mDiv.scrollTop = mDiv.scrollHeight;
             });
         }
 
-        // ENVIAR MENSAGEM (ENTER)
         function enviar() {
-            const txt = document.getElementById('msg-in').value;
-            if(txt.trim()){
-                db.ref("msgs/" + canalAtual).push({
+            const t = document.getElementById('msg').value;
+            if(t.trim()) {
+                db.ref("chat_" + canalAtual).push({
                     user: auth.currentUser.email.split('@')[0],
-                    text: txt,
-                    type: detectarTipo(txt)
+                    text: t
                 });
-                document.getElementById('msg-in').value = "";
+                document.getElementById('msg').value = "";
             }
         }
 
+        // ENTER PARA ENVIAR
         document.addEventListener('keypress', e => {
             if(e.key === 'Enter') {
                 if(document.getElementById('main-app').style.display === 'flex') enviar();
-                else fazerLogin();
+                else logar();
             }
         });
 
-        function detectarTipo(t) {
-            if(t.match(/\.(jpeg|jpg|gif|png)$/)) return 'img';
-            if(t.match(/\.(mp3|wav|ogg)$/)) return 'audio';
-            return 'text';
+        // EFEITOS FLUTUANTES E PONTUAÇÃO
+        function startParticles() {
+            setInterval(() => {
+                const emoji = canalAtual === 'canal1' ? '💖' : '💀';
+                const p = document.createElement('div');
+                p.className = 'floating';
+                p.innerHTML = emoji;
+                p.style.left = Math.random() * 90 + 'vw';
+                p.style.top = '110vh';
+                
+                p.onclick = () => {
+                    pontos += 10;
+                    document.getElementById('pontos').innerText = pontos;
+                    p.style.transform = 'scale(4)';
+                    p.style.opacity = '0';
+                    setTimeout(() => p.remove(), 200);
+                };
+
+                document.body.appendChild(p);
+
+                let pos = 110;
+                let move = setInterval(() => {
+                    pos -= 0.5;
+                    p.style.top = pos + 'vh';
+                    if(pos < -10) { clearInterval(move); p.remove(); }
+                }, 20);
+            }, 1000);
         }
-
-        function exibirMensagem(d) {
-            const box = document.getElementById('messages');
-            let conteudo = `<div><b style="color:#ff0055">${d.user}:</b> ${d.text}</div>`;
-            if(d.type === 'img') conteudo = `<div><b style="color:#ff0055">${d.user}:</b><br><img src="${d.text}"></div>`;
-            if(d.type === 'audio') conteudo = `<div><b style="color:#ff0055">${d.user}:</b><br><audio controls src="${d.text}"></audio></div>`;
-            
-            box.innerHTML += conteudo;
-            box.scrollTop = box.scrollHeight;
-        }
-
-        // SISTEMA DE PONTOS E ESTOURO
-        function spawnParticle() {
-            if(document.getElementById('main-app').style.display === 'none') return;
-            const p = document.createElement('div');
-            p.className = 'particle';
-            p.innerHTML = canalAtual === 'canal1' ? '💖' : '💀';
-            p.style.left = Math.random() * 90 + 'vw';
-            p.style.top = '100vh';
-            
-            p.onclick = () => {
-                pontos += 10;
-                document.getElementById('pontuacao').innerText = pontos;
-                p.style.transform = 'scale(3)';
-                p.style.opacity = '0';
-                setTimeout(() => p.remove(), 200);
-            };
-
-            document.getElementById('chat-container').appendChild(p);
-
-            let pos = 100;
-            let int = setInterval(() => {
-                pos -= 0.5;
-                p.style.top = pos + 'vh';
-                if(pos < -10) { clearInterval(int); p.remove(); }
-            }, 20);
-        }
-
-        setInterval(spawnParticle, 1000);
-
     </script>
 </body>
 </html>
