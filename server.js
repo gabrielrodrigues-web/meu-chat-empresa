@@ -1,10 +1,9 @@
 const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
-// ALTERADO: Adicionado maxHttpBufferSize para permitir envio de imagens/audios grandes
 const io = require('socket.io')(http, { 
     cors: { origin: "*" },
-    maxHttpBufferSize: 1e8 // 100 MB de limite para evitar desconexão ao enviar mídia
+    maxHttpBufferSize: 1e8 // Permite arquivos de até 100MB
 });
 
 const connectedUsers = {}; 
@@ -22,6 +21,7 @@ io.on('connection', (socket) => {
     const userIP = socket.handshake.address;
     const now = Date.now();
 
+    // Bloqueio por IP progressivo
     if (ipBanHistory[userIP] && now < ipBanHistory[userIP].expires) {
         const resto = Math.ceil((ipBanHistory[userIP].expires - now) / 60000);
         socket.emit('error message', `ACESSO NEGADO. Você ainda está banido por ${resto} min.`);
@@ -30,15 +30,25 @@ io.on('connection', (socket) => {
     }
 
     socket.on('login request', (data, callback) => {
+        // --- SOLUÇÃO PARA O ERRO DA IMAGEM (TRIM UNDEFINED) ---
+        if (!data || !data.nickname || typeof data.nickname !== 'string') {
+            return callback({ success: false, message: "Dados de login inválidos!" });
+        }
+
         const cleanName = data.nickname.trim().substring(0, 10);
         const nameLower = cleanName.toLowerCase();
         const password = data.password;
 
+        if (cleanName.length === 0) {
+            return callback({ success: false, message: "O apelido não pode ser vazio!" });
+        }
+
         const isOnline = Object.values(connectedUsers).some(u => u.toLowerCase() === nameLower);
-        
+
+        // Lógica de Senha e Reserva
         if (userPasswords[nameLower]) {
             if (userPasswords[nameLower] !== password) {
-                return callback({ success: false, message: "Senha incorreta para este apelido!" });
+                return callback({ success: false, message: "Senha incorreta!" });
             }
         } else {
             userPasswords[nameLower] = password;
@@ -57,7 +67,6 @@ io.on('connection', (socket) => {
         if (data.password === ADMIN_PASSWORD) {
             const targetName = data.targetName;
             const targetLower = targetName.toLowerCase();
-
             delete userScores[targetName];
             delete reservedNames[targetLower];
 
@@ -68,10 +77,9 @@ io.on('connection', (socket) => {
                         const ip = targetSocket.handshake.address;
                         if (!ipBanHistory[ip]) ipBanHistory[ip] = { count: 0, expires: 0 };
                         ipBanHistory[ip].count++;
-
                         const banTime = ipBanHistory[ip].count === 1 ? 1 : (ipBanHistory[ip].count - 1) * 5;
                         ipBanHistory[ip].expires = Date.now() + (banTime * 60000);
-
+                        
                         const aviso = `🚨 SISTEMA: ${targetName} foi banido por ${banTime} minutos.`;
                         io.emit('chat message', { room: 'sky', user: '🛡️ ADMIN', text: aviso });
                         io.emit('chat message', { room: 'hell', user: '🛡️ ADMIN', text: aviso });
@@ -100,7 +108,7 @@ io.on('connection', (socket) => {
         }
     });
 
-    // O backend apenas repassa a mensagem (seja texto, img ou audio)
+    // Repassa texto, imagem ou áudio
     socket.on('chat message', (msg) => io.to(msg.room).emit('chat message', msg));
 
     socket.on('disconnect', () => {
