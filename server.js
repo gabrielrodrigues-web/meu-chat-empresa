@@ -3,7 +3,7 @@ const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http, { 
     cors: { origin: "*" },
-    maxHttpBufferSize: 1e8 // 100MB para fotos e áudios pesados
+    maxHttpBufferSize: 1e8 // 100MB
 });
 
 const connectedUsers = {}; 
@@ -15,7 +15,6 @@ const ADMIN_PASSWORD = "050100@g";
 app.use(express.static(__dirname));
 app.get('/', (req, res) => res.sendFile(__dirname + '/index.html'));
 
-// SISTEMA DE EMOJIS POR NÍVEL
 function getEmoji(score) {
     if (score >= 1000) return " 👑";
     if (score >= 900) return " 💎";
@@ -73,7 +72,12 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('join room', (room) => { socket.leaveAll(); socket.join(room); enviarRanking(room); });
+    socket.on('join room', (room) => { 
+        // Sai de todas as salas anteriores (exceto a sala privada do socket)
+        socket.rooms.forEach(r => { if(r !== socket.id) socket.leave(r); });
+        socket.join(room); 
+        enviarRanking(room); 
+    });
 
     socket.on('update score', (data) => {
         const name = connectedUsers[socket.id];
@@ -87,8 +91,8 @@ io.on('connection', (socket) => {
         const name = connectedUsers[socket.id];
         if (!name) return;
         const score = userScores[name] ? userScores[name][msg.room] : 0;
-        // Atribui o nome com emoji no servidor para evitar fraudes
         msg.user = name + getEmoji(score);
+        // Garante que o room original seja enviado de volta para o cliente organizar
         io.to(msg.room).emit('chat message', msg);
     });
 
