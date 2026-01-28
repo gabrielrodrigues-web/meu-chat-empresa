@@ -17,16 +17,26 @@
         #main-app { display: none; height: 100vh; width: 100%; position: relative; }
         #canvas-particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: crosshair; z-index: 1; }
 
-        /* ÁREA CENTRAL (Menor) */
+        /* ÁREA CENTRAL */
         .stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 5; pointer-events: none; }
         .nav-bar { position: absolute; top: 20px; display: flex; gap: 10px; pointer-events: auto; }
         .nav-btn { padding: 10px 15px; border: 2px solid var(--main); cursor: pointer; background: var(--bg); color: var(--text); font-weight: bold; font-size: 12px; }
         .nav-btn.active { background: var(--main); color: #fff; box-shadow: 0 0 15px var(--main); }
 
+        /* RANKING CSS */
+        #ranking-box {
+            position: absolute; top: 80px; left: 20px;
+            background: rgba(0,0,0,0.05); padding: 10px;
+            border: 1px solid var(--main); font-size: 11px;
+            z-index: 100; pointer-events: none; width: 160px;
+            color: var(--text);
+        }
+        .rank-item { margin-bottom: 5px; border-bottom: 1px dotted var(--main); display: flex; justify-content: space-between; }
+
         #big-icon { font-size: 100px; user-select: none; filter: drop-shadow(0 0 10px var(--main)); }
         #score { font-size: 40px; font-weight: bold; color: var(--main); margin-top: 5px; }
 
-        /* CHAT LATERAL (MAIOR) */
+        /* CHAT LATERAL */
         .chat-sidebar { 
             width: 550px; background: var(--bg); border-left: 3px solid var(--main); 
             display: flex; flex-direction: column; z-index: 10; position: relative;
@@ -58,6 +68,12 @@
                     <button id="btn-sky" class="nav-btn active" onclick="mudar('sky')">MODO CÉU 💖</button>
                     <button id="btn-hell" class="nav-btn" onclick="mudar('hell')">MODO INFERNAL 💀</button>
                 </div>
+
+                <div id="ranking-box">
+                    <div style="font-weight:bold; margin-bottom:5px; text-align:center; border-bottom: 2px solid var(--main);">TOP 5 ELITE</div>
+                    <div id="ranking-list"></div>
+                </div>
+
                 <div id="big-icon">💖</div>
                 <div id="score">0</div>
             </div>
@@ -81,7 +97,7 @@
         const socket = io();
         let user = "", sala = "sky";
         let placar = { sky: 0, hell: 0 };
-        let chatHistory = { sky: [], hell: [] }; // Memória local das mensagens
+        let chatHistory = { sky: [], hell: [] };
         const canvas = document.getElementById('canvas-particles');
         const ctx = canvas.getContext('2d');
         let particles = [];
@@ -90,10 +106,8 @@
         function entrar() {
             const inputNome = document.getElementById('nick');
             const nomeDigitado = inputNome.value.trim();
-            
             if(!nomeDigitado) return alert("Digite seu apelido!");
 
-            // MUDANÇA AQUI: Verifica com o servidor se o nome está livre
             socket.emit('login request', nomeDigitado, (permitido) => {
                 if (permitido) {
                     user = nomeDigitado;
@@ -102,17 +116,9 @@
                     resize(); animate();
                     socket.emit('join room', sala);
                 } else {
-                    alert("Esse apelido já está em uso! Escolha outro.");
-                    inputNome.value = ""; // Limpa o campo
+                    alert("Esse apelido já está em uso!");
                 }
             });
-        }
-
-        function renderMessages() {
-            const mContainer = document.getElementById('messages');
-            mContainer.innerHTML = "";
-            chatHistory[sala].forEach(msg => mContainer.appendChild(msg.element));
-            mContainer.scrollTop = mContainer.scrollHeight;
         }
 
         function mudar(m) {
@@ -135,6 +141,13 @@
             renderMessages();
             particles = [];
             socket.emit('join room', sala);
+        }
+
+        function renderMessages() {
+            const mContainer = document.getElementById('messages');
+            mContainer.innerHTML = "";
+            chatHistory[sala].forEach(msg => mContainer.appendChild(msg.element));
+            mContainer.scrollTop = mContainer.scrollHeight;
         }
 
         function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
@@ -165,6 +178,7 @@
                     p.exploded = true;
                     placar[sala]++;
                     document.getElementById('score').innerText = placar[sala];
+                    socket.emit('update score', { room: sala });
                 }
             });
         });
@@ -200,21 +214,27 @@
             if(data.type === 'img') content = `<img src="${data.img}" style="max-width:100%">`;
             if(data.type === 'audio') content = `<audio controls src="${data.audio}"></audio>`;
             div.innerHTML = `<b>${data.user}:</b><br>${content}`;
-
-            // Salva no histórico da sala correspondente
             chatHistory[data.room].push({ element: div, time: Date.now() });
-
             if(data.room === sala) {
                 const m = document.getElementById('messages');
                 m.appendChild(div);
                 m.scrollTop = m.scrollHeight;
             }
-
-            // Timer de 6 minutos (360000ms)
             setTimeout(() => {
                 div.remove();
                 chatHistory[data.room] = chatHistory[data.room].filter(m => m.element !== div);
             }, 360000);
+        });
+
+        socket.on('update ranking', (ranking) => {
+            const list = document.getElementById('ranking-list');
+            list.innerHTML = "";
+            ranking.forEach((u, i) => {
+                const div = document.createElement('div');
+                div.className = "rank-item";
+                div.innerHTML = `<span>${i+1}. ${u.name}</span> <span>${u.score}</span>`;
+                list.appendChild(div);
+            });
         });
 
         async function iniciarAudio() {
