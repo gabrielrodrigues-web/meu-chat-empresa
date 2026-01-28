@@ -89,16 +89,7 @@
         const canvas = document.getElementById('canvas-particles');
         const ctx = canvas.getContext('2d');
         let particles = [];
-        
-        let recorder;
-        let chunks = [];
-        let isRec = false;
-
-        function showAchievement(txt) {
-            const el = document.getElementById('achievement-msg');
-            el.innerText = txt; el.style.opacity = '1';
-            setTimeout(() => { el.style.opacity = '0'; }, 2000);
-        }
+        let recorder; let chunks = []; let isRec = false;
 
         function entrar() {
             const n = document.getElementById('nick').value.trim();
@@ -135,12 +126,6 @@
                 if(!p.exploded && e.clientX > p.x && e.clientX < p.x + 50 && e.clientY > p.y - 50 && e.clientY < p.y) {
                     p.exploded = true; placar[sala]++;
                     document.getElementById('score').innerText = placar[sala];
-                    const pt = placar[sala];
-                    if(pt === 100) showAchievement("Caramba, você está mandando bem!!!!");
-                    else if(pt === 200) showAchievement("Você é um verdadeiro viciado em serotonina");
-                    else if(pt === 300) showAchievement("Nossa, você perdeu a noção do tempo");
-                    else if(pt === 400) showAchievement("você é um gênio da mira");
-                    else if(pt === 500) { showAchievement("parabéns, você agora é o rei 👑"); if(!user.includes("👑")) user += " 👑"; }
                     socket.emit('update score', { room: sala });
                 }
             });
@@ -159,7 +144,6 @@
         }
 
         function resize() { canvas.width = window.innerWidth - 550; canvas.height = window.innerHeight; }
-        
         function enviar() {
             const i = document.getElementById('msg-in');
             if(i.value) socket.emit('chat message', { room: sala, user: user, text: i.value });
@@ -177,19 +161,21 @@
         async function handleAudio() {
             const btn = document.getElementById('btn-rec');
             if (!isRec) {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                recorder = new MediaRecorder(stream);
-                chunks = [];
-                recorder.ondataavailable = e => chunks.push(e.data);
-                recorder.onstop = () => {
-                    const blob = new Blob(chunks, { type: 'audio/webm' });
-                    const reader = new FileReader();
-                    reader.onload = (e) => socket.emit('chat message', { room: sala, user: user, audio: e.target.result });
-                    reader.readAsDataURL(blob);
-                    stream.getTracks().forEach(t => t.stop());
-                };
-                recorder.start();
-                isRec = true; btn.innerText = "🛑 PARAR"; btn.classList.add('active-rec');
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    recorder = new MediaRecorder(stream);
+                    chunks = [];
+                    recorder.ondataavailable = e => chunks.push(e.data);
+                    recorder.onstop = () => {
+                        const blob = new Blob(chunks, { type: 'audio/webm' });
+                        const reader = new FileReader();
+                        reader.onload = (e) => socket.emit('chat message', { room: sala, user: user, audio: e.target.result });
+                        reader.readAsDataURL(blob);
+                        stream.getTracks().forEach(t => t.stop());
+                    };
+                    recorder.start();
+                    isRec = true; btn.innerText = "🛑 PARAR"; btn.classList.add('active-rec');
+                } catch(e) { alert("Microfone não permitido."); }
             } else {
                 recorder.stop();
                 isRec = false; btn.innerText = "🎤 GRAVAR"; btn.classList.remove('active-rec');
