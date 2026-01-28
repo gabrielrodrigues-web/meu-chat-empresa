@@ -23,8 +23,9 @@
         #achievement-msg { height: 60px; font-size: 20px; font-weight: bold; color: #ff0000; text-align: center; opacity: 0; transition: 0.3s; }
         .chat-sidebar { width: 550px; border-left: 3px solid var(--main); display: flex; flex-direction: column; background: var(--bg); z-index: 10; }
         #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; }
-        .msg { background: rgba(0,0,0,0.03); padding: 10px; border-left: 4px solid var(--main); }
-        .msg img { max-width: 100%; margin-top: 5px; border-radius: 5px; }
+        .msg { background: rgba(0,0,0,0.03); padding: 10px; border-left: 4px solid var(--main); word-wrap: break-word; }
+        .msg img { max-width: 100%; margin-top: 5px; border-radius: 5px; display: block; border: 1px solid var(--main); }
+        .msg audio { width: 100%; margin-top: 5px; display: block; }
         .input-area { padding: 15px; border-top: 1px solid #ddd; }
         #msg-in { width: 100%; padding: 10px; border: 1px solid var(--main); background: none; color: var(--text); margin-bottom: 10px; }
         .controls { display: flex; gap: 5px; }
@@ -110,7 +111,7 @@
             document.getElementById('btn-sky').classList.toggle('active', isSky);
             document.getElementById('btn-hell').classList.toggle('active', !isSky);
             document.getElementById('score').innerText = placar[sala];
-            socket.emit('join room', sala);
+            particles = []; socket.emit('join room', sala);
         }
 
         canvas.addEventListener('mousedown', (e) => {
@@ -120,7 +121,6 @@
                     const pt = placar[sala];
                     document.getElementById('score').innerText = pt;
                     
-                    // Alertas de Conquista
                     if(pt === 100) showAchievement("Nível 💩: Tá ruim hein!");
                     if(pt === 200) showAchievement("Nível 🤡: Começou a brincadeira!");
                     if(pt === 300) showAchievement("Nível ⚡: Tá ficando elétrico!");
@@ -145,16 +145,24 @@
         }
 
         function resize() { canvas.width = window.innerWidth - 550; canvas.height = window.innerHeight; }
+        
         function enviar() {
             const i = document.getElementById('msg-in');
-            if(i.value) socket.emit('chat message', { room: sala, user: user, text: i.value });
+            if(i.value) socket.emit('chat message', { room: sala, text: i.value });
             i.value = "";
         }
 
+        // FIX DAS FOTOS: Função Robusta
         function uploadImg(input) {
-            if (input.files[0]) {
+            if (input.files && input.files[0]) {
                 const r = new FileReader();
-                r.onload = (e) => socket.emit('chat message', { room: sala, user: user, img: e.target.result });
+                r.onload = (e) => {
+                    socket.emit('chat message', { 
+                        room: sala, 
+                        img: e.target.result 
+                    });
+                    input.value = ""; // Limpa para permitir re-envio
+                };
                 r.readAsDataURL(input.files[0]);
             }
         }
@@ -162,18 +170,21 @@
         async function handleAudio() {
             const b = document.getElementById('btn-rec');
             if(!isRec) {
-                const s = await navigator.mediaDevices.getUserMedia({ audio: true });
-                recorder = new MediaRecorder(s); chunks = [];
-                recorder.ondataavailable = e => chunks.push(e.data);
-                recorder.onstop = () => {
-                    const blob = new Blob(chunks, { type: 'audio/webm' });
-                    const r = new FileReader();
-                    r.onload = (e) => socket.emit('chat message', { room: sala, user: user, audio: e.target.result });
-                    r.readAsDataURL(blob);
-                };
-                recorder.start(); isRec = true; b.innerText = "PARAR"; b.style.color = "red";
+                try {
+                    const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    recorder = new MediaRecorder(s); chunks = [];
+                    recorder.ondataavailable = e => chunks.push(e.data);
+                    recorder.onstop = () => {
+                        const blob = new Blob(chunks, { type: 'audio/webm' });
+                        const r = new FileReader();
+                        r.onload = (e) => socket.emit('chat message', { room: sala, audio: e.target.result });
+                        r.readAsDataURL(blob);
+                        s.getTracks().forEach(t => t.stop());
+                    };
+                    recorder.start(); isRec = true; b.innerText = "🛑 PARAR";
+                } catch(e) { alert("Microfone desativado."); }
             } else {
-                recorder.stop(); isRec = false; b.innerText = "GRAVAR"; b.style.color = "var(--main)";
+                recorder.stop(); isRec = false; b.innerText = "🎤 GRAVAR";
             }
         }
 
