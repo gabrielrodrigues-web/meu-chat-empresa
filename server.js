@@ -5,25 +5,61 @@ const io = require('socket.io')(http, { cors: { origin: "*" } });
 
 const connectedUsers = {}; 
 const userScores = {}; 
+const reservedNames = {}; // Guarda { "nome": timestamp_expiracao }
+const bannedIPs = new Set(); 
+
+// SENHA DEFINIDA
+const ADMIN_PASSWORD = "050100@g"; 
 
 app.use(express.static(__dirname));
-
-app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/index.html');
-});
+app.get('/', (req, res) => res.sendFile(__dirname + '/index.html'));
 
 io.on('connection', (socket) => {
-    socket.on('login request', (nickname, callback) => {
-        const users = Object.values(connectedUsers);
-        const nameExists = users.some(u => u.toLowerCase() === nickname.toLowerCase());
+    const userIP = socket.handshake.address;
 
-        if (nameExists) {
-            callback(false);
+    if (bannedIPs.has(userIP)) {
+        socket.emit('error message', 'Você está banido deste servidor.');
+        socket.disconnect();
+        return;
+    }
+
+    socket.on('login request', (nickname, callback) => {
+        const now = Date.now();
+        const cleanName = nickname.trim().substring(0, 10); 
+
+        const isOnline = Object.values(connectedUsers).some(u => u.toLowerCase() === cleanName.toLowerCase());
+        const isReserved = reservedNames[cleanName.toLowerCase()] && now < reservedNames[cleanName.toLowerCase()];
+
+        if (isOnline || isReserved) {
+            callback({ success: false, message: "Nome em uso ou reservado (aguarde 20min)." });
+        } else if (cleanName.length < 2) {
+            callback({ success: false, message: "Nome muito curto!" });
         } else {
-            connectedUsers[socket.id] = nickname;
-            if (!userScores[nickname]) userScores[nickname] = { sky: 0, hell: 0 };
-            callback(true);
+            connectedUsers[socket.id] = cleanName;
+            if (!userScores[cleanName]) userScores[cleanName] = { sky: 0, hell: 0 };
+            callback({ success: true });
         }
+    });
+
+    socket.on('admin ban', (data) => {
+        if (data.password !== ADMIN_PASSWORD) {
+            socket.emit('error message', 'Acesso negado: Senha incorreta.');
+            return;
+        }
+        const targetName = data.targetName;
+        let found = false;
+        for (const [id, name] of Object.entries(connectedUsers)) {
+            if (name.toLowerCase() === targetName.toLowerCase()) {
+                const targetSocket = io.sockets.sockets.get(id);
+                if (targetSocket) {
+                    bannedIPs.add(targetSocket.handshake.address);
+                    targetSocket.emit('error message', 'Você foi banido pelo administrador.');
+                    targetSocket.disconnect();
+                    found = true;
+                }
+            }
+        }
+        if (found) socket.emit('chat message', { room: 'sky', user: 'SYSTEM', text: `${targetName} foi banido.` });
     });
 
     socket.on('join room', (room) => {
@@ -45,16 +81,18 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
-        delete connectedUsers[socket.id];
+        const name = connectedUsers[socket.id];
+        if (name) {
+            reservedNames[name.toLowerCase()] = Date.now() + (20 * 60 * 1000);
+            delete connectedUsers[socket.id];
+        }
     });
 
     function enviarRanking(room) {
         const ranking = Object.keys(userScores)
             .map(name => ({ name, score: userScores[name][room] || 0 }))
             .filter(user => user.score > 0)
-            .sort((a, b) => b.score - a.score)
-            .slice(0, 5);
-        
+            .sort((a, b) => b.score - a.score).slice(0, 5);
         io.to(room).emit('update ranking', ranking);
     }
 });
