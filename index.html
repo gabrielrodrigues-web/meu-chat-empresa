@@ -2,94 +2,93 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BIPOLAR - ELITE SYSTEM</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        :root { --main: #ffb7ce; --bg: #ffffff; --text: #000; }
+        :root { --main: #ffb7ce; --bg: #ffffff; --text: #000; --border: #ffb7ce; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', Courier, monospace; }
-        body { background: var(--bg); height: 100vh; overflow: hidden; color: var(--text); transition: 0.5s; }
+        body { background: var(--bg); height: 100vh; display: flex; color: var(--text); overflow: hidden; transition: 0.5s; }
+        
         #login-screen { position: fixed; inset: 0; background: #000; z-index: 2000; display: flex; align-items: center; justify-content: center; }
-        .login-box { border: 3px solid #ff0055; padding: 40px; border-radius: 10px; text-align: center; background: #050505; width: 350px; box-shadow: 0 0 20px #ff0055; }
-        input[type="text"] { width: 100%; padding: 15px; margin: 15px 0; background: #111; border: 1px solid #ff0055; color: #fff; outline: none; text-align: center; }
-        #main-app { display: none; height: 100vh; width: 100%; position: relative; }
-        #canvas-particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: crosshair; z-index: 1; }
-        .stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 5; pointer-events: none; }
-        .nav-bar { position: absolute; top: 20px; display: flex; gap: 10px; pointer-events: auto; }
-        .nav-btn { padding: 10px 15px; border: 2px solid var(--main); cursor: pointer; background: var(--bg); color: var(--text); font-weight: bold; font-size: 12px; }
-        .nav-btn.active { background: var(--main); color: #fff; box-shadow: 0 0 15px var(--main); }
-        #ranking-box { position: absolute; top: 80px; left: 20px; background: rgba(0,0,0,0.05); padding: 10px; border: 1px solid var(--main); font-size: 11px; z-index: 100; pointer-events: none; width: 160px; color: var(--text); }
-        .rank-item { margin-bottom: 5px; border-bottom: 1px dotted var(--main); display: flex; justify-content: space-between; }
-        #big-icon { font-size: 100px; user-select: none; filter: drop-shadow(0 0 10px var(--main)); }
-        #score { font-size: 40px; font-weight: bold; color: var(--main); margin-top: 5px; }
-        .chat-sidebar { width: 400px; background: var(--bg); border-left: 3px solid var(--main); display: flex; flex-direction: column; z-index: 10; position: relative; }
-        #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { background: rgba(0,0,0,0.03); padding: 12px; border: 1px solid rgba(0,0,0,0.1); font-size: 14px; border-left: 4px solid var(--main); color: var(--text); }
-        .input-area { padding: 15px; background: var(--bg); border-top: 1px solid rgba(0,0,0,0.1); }
-        .controls { display: flex; gap: 5px; margin-top: 10px; }
-        .controls button, .controls label { flex: 1; padding: 10px; font-size: 11px; background: var(--bg); color: var(--main); border: 1px solid var(--main); cursor: pointer; text-align: center; font-weight: bold; }
-        #msg-in { padding: 12px; background: rgba(0,0,0,0.02); border: 1px solid var(--main); color: var(--text); outline: none; width: 100%; }
+        .login-box { border: 3px solid #ff0055; padding: 40px; border-radius: 10px; text-align: center; background: #050505; width: 320px; }
+        
+        /* Layout Lateral Esquerdo */
+        .game-panel { width: 350px; border-right: 2px solid var(--border); display: flex; flex-direction: column; padding: 20px; align-items: center; z-index: 10; background: var(--bg); }
+        .nav-bar { display: flex; gap: 10px; margin-bottom: 20px; }
+        .nav-btn { padding: 10px; border: 2px solid var(--border); background: none; color: var(--text); cursor: pointer; font-weight: bold; font-size: 11px; }
+        .active-btn { background: var(--border); color: #fff; }
+        #ranking-box { border: 1px solid var(--border); width: 100%; padding: 10px; margin-top: 20px; }
+        .rank-title { text-align: center; border-bottom: 1px solid var(--border); font-weight: bold; padding-bottom: 5px; margin-bottom: 10px; }
+
+        /* Área do Jogo Central */
+        .main-stage { flex: 1; position: relative; overflow: hidden; cursor: crosshair; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #canvas { position: absolute; inset: 0; }
+        #big-score { font-size: 80px; color: var(--border); font-weight: bold; z-index: 5; opacity: 0.5; }
+        
+        /* Chat Direita */
+        .chat-area { width: 400px; border-left: 2px solid var(--border); display: flex; flex-direction: column; background: var(--bg); }
+        #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; }
+        .msg-box { padding: 15px; border-top: 2px solid var(--border); background: var(--bg); }
+        #msg-in { width: 100%; padding: 12px; border: 1px solid var(--border); background: none; color: var(--text); margin-bottom: 10px; outline: none; }
+        .btn-row { display: flex; gap: 5px; }
+        .btn-row button { flex: 1; padding: 8px; border: 1px solid var(--border); background: none; color: var(--text); cursor: pointer; font-size: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
     <div id="login-screen">
         <div class="login-box">
-            <h1 style="color:#ff0055">BIPOLAR</h1>
-            <input type="text" id="nick" placeholder="APELIDO" maxlength="10">
-            <button onclick="entrar()" style="width:100%; padding:15px; background:#ff0055; color:#fff; border:none; font-weight:bold; cursor:pointer;">ACESSAR</button>
+            <h1 style="color:#ff0055; margin-bottom: 20px;">BIPOLAR</h1>
+            <input type="text" id="nick" placeholder="APELIDO" maxlength="10" style="width:100%; padding:12px; margin-bottom:20px; background:#111; border:1px solid #ff0055; color:#fff; text-align:center;">
+            <button onclick="entrar()" style="width:100%; padding:12px; background:#ff0055; color:#fff; border:none; cursor:pointer; font-weight:bold;">ACESSAR</button>
         </div>
     </div>
-    <div id="main-app">
-        <canvas id="canvas-particles"></canvas>
-        <div style="display:flex; width:100%; height:100%;">
-            <div class="stage">
-                <div class="nav-bar">
-                    <button id="btn-sky" class="nav-btn active" onclick="mudar('sky')">MODO CÉU 💖</button>
-                    <button id="btn-hell" class="nav-btn" onclick="mudar('hell')">MODO INFERNAL 💀</button>
-                </div>
-                <div id="ranking-box">
-                    <div style="font-weight:bold; margin-bottom:5px; text-align:center; border-bottom: 2px solid var(--main);">TOP 5 ELITE</div>
-                    <div id="ranking-list"></div>
-                </div>
-                <div id="big-icon">💖</div>
-                <div id="score">0</div>
-            </div>
-            <div class="chat-sidebar">
-                <div id="messages"></div>
-                <div class="input-area">
-                    <input type="text" id="msg-in" placeholder="Mensagem..." onkeypress="if(event.key==='Enter') enviar()">
-                    <div class="controls">
-                        <button onclick="enviar()">ENVIAR</button>
-                        <label for="img-up">IMAGEM</label>
-                        <input type="file" id="img-up" accept="image/*" style="display:none" onchange="enviarImagem(this)">
-                        <button id="rec-btn" onmousedown="iniciarAudio()" onmouseup="pararAudio()">🎤 GRAVAR</button>
-                    </div>
-                </div>
+
+    <div class="game-panel">
+        <div class="nav-bar">
+            <button id="btn-sky" class="nav-btn active-btn" onclick="mudar('sky')">MODO CÉU 💖</button>
+            <button id="btn-hell" class="nav-btn" onclick="mudar('hell')">MODO INFERNAL 💀</button>
+        </div>
+        <div id="ranking-box">
+            <div class="rank-title">TOP 5 ELITE</div>
+            <div id="ranking-list"></div>
+        </div>
+    </div>
+
+    <div class="main-stage">
+        <canvas id="canvas"></canvas>
+        <div id="big-score">0</div>
+    </div>
+
+    <div class="chat-area">
+        <div id="messages"></div>
+        <div class="msg-box">
+            <input type="text" id="msg-in" placeholder="Escreva aqui..." onkeypress="if(event.key==='Enter') enviar()">
+            <div class="btn-row">
+                <button onclick="enviar()">ENVIAR</button>
+                <button>IMAGEM</button>
+                <button>🎤 GRAVAR</button>
             </div>
         </div>
     </div>
+
     <script>
         const socket = io();
-        let user = "", sala = "sky";
-        let placar = { sky: 0, hell: 0 };
-        let chatHistory = { sky: [], hell: [] };
-        const canvas = document.getElementById('canvas-particles');
+        let user = "", sala = "sky", placarLocal = 0;
+        const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
         let particles = [];
-        let mediaRecorder, audioChunks = [];
 
         function entrar() {
-            const inputNome = document.getElementById('nick');
-            const nomeDigitado = inputNome.value.trim();
-            if(!nomeDigitado) return alert("Digite seu apelido!");
-            socket.emit('login request', nomeDigitado, (res) => {
-                if (res.success) {
-                    user = nomeDigitado.substring(0, 10);
+            const n = document.getElementById('nick').value.trim();
+            if(!n) return alert("Digite um apelido!");
+            socket.emit('login request', n, (res) => {
+                if(res.success) {
+                    user = n;
                     document.getElementById('login-screen').style.display = 'none';
-                    document.getElementById('main-app').style.display = 'flex';
-                    resize(); animate();
                     socket.emit('join room', sala);
-                } else { alert(res.message); }
+                    animate();
+                } else alert(res.message);
             });
         }
 
@@ -99,128 +98,88 @@
             if(m === 'sky') {
                 root.style.setProperty('--main', '#ffb7ce');
                 root.style.setProperty('--bg', '#ffffff');
-                root.style.setProperty('--text', '#000000');
-                document.getElementById('big-icon').innerText = '💖';
+                root.style.setProperty('--text', '#000');
+                root.style.setProperty('--border', '#ffb7ce');
             } else {
                 root.style.setProperty('--main', '#ff3300');
                 root.style.setProperty('--bg', '#000000');
                 root.style.setProperty('--text', '#ffffff');
-                document.getElementById('big-icon').innerText = '💀';
+                root.style.setProperty('--border', '#ff3300');
             }
-            document.getElementById('btn-sky').classList.toggle('active', m === 'sky');
-            document.getElementById('btn-hell').classList.toggle('active', m === 'hell');
-            document.getElementById('score').innerText = placar[sala];
-            renderMessages();
+            document.getElementById('btn-sky').classList.toggle('active-btn', m === 'sky');
+            document.getElementById('btn-hell').classList.toggle('active-btn', m === 'hell');
             particles = [];
             socket.emit('join room', sala);
         }
 
-        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-        window.onresize = resize;
-
-        class Particle {
-            constructor() {
-                this.x = Math.random() * (canvas.width - 450);
-                this.y = canvas.height + 50;
-                this.speed = Math.random() * 2 + 1;
-                this.icon = sala === 'sky' ? '💖' : '💀';
-                this.exploded = false;
-                this.timer = 0;
-            }
-            update() { if(!this.exploded) this.y -= this.speed; else this.timer++; }
-            draw() { ctx.font = "40px Arial"; ctx.fillText(this.exploded ? "💥" : this.icon, this.x, this.y); }
-        }
-
         canvas.addEventListener('mousedown', (e) => {
             particles.forEach((p) => {
-                if(!p.exploded && e.clientX > p.x && e.clientX < p.x + 45 && e.clientY > p.y - 40 && e.clientY < p.y + 10) {
+                if(!p.exploded && e.clientX > p.x && e.clientX < p.x + 60 && e.clientY > p.y - 60 && e.clientY < p.y) {
                     p.exploded = true;
-                    placar[sala]++;
-                    document.getElementById('score').innerText = placar[sala];
+                    placarLocal++;
+                    document.getElementById('big-score').innerText = placarLocal;
                     
-                    // CONQUISTAS
-                    let pts = placar[sala];
-                    if(pts === 100) alert("Caramba, você está mandando bem!!!!");
-                    else if(pts === 200) alert("Você é um verdadeiro viciado em serotonina");
-                    else if(pts === 300) alert("Nossa, você perdeu a noção do tempo");
-                    else if(pts === 400) alert("você é um gênio da mira");
-                    else if(pts === 500) {
+                    // Sistema de Conquistas
+                    if(placarLocal === 100) alert("Caramba, você está mandando bem!!!!");
+                    else if(placarLocal === 200) alert("Você é um verdadeiro viciado em serotonina");
+                    else if(placarLocal === 300) alert("Nossa, você perdeu a noção do tempo");
+                    else if(placarLocal === 400) alert("você é um gênio da mira");
+                    else if(placarLocal === 500) {
                         alert("parabéns, você agora é o rei de explodir balões");
                         user += " 👑";
                     }
+                    
                     socket.emit('update score', { room: sala });
                 }
             });
         });
 
         function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            if(Math.random() < 0.04) particles.push(new Particle());
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+            if(Math.random() < 0.04) {
+                particles.push({ 
+                    x: Math.random() * (canvas.width - 400) + 50, 
+                    y: canvas.height + 50, 
+                    exploded: false,
+                    speed: Math.random() * 2 + 1
+                });
+            }
             particles.forEach((p, i) => {
-                p.update(); p.draw();
-                if(p.y < -50 || (p.exploded && p.timer > 10)) particles.splice(i, 1);
+                p.y -= p.speed;
+                ctx.font = "50px Arial";
+                ctx.fillText(p.exploded ? "💥" : (sala === 'sky' ? "💖" : "💀"), p.x, p.y);
+                if(p.y < -100) particles.splice(i, 1);
             });
             requestAnimationFrame(animate);
         }
 
         function enviar() {
             const i = document.getElementById('msg-in');
-            if(!i.value) return;
-            socket.emit('chat message', { room: sala, user: user, text: i.value, type: 'text' });
-            i.value = "";
-        }
-
-        function enviarImagem(input) {
-            const file = input.files[0];
-            const reader = new FileReader();
-            reader.onload = (e) => socket.emit('chat message', { room: sala, user: user, img: e.target.result, type: 'img' });
-            reader.readAsDataURL(file);
-        }
-
-        socket.on('chat message', (data) => {
-            const div = document.createElement('div');
-            div.className = "msg";
-            let content = data.text;
-            if(data.type === 'img') content = `<img src="${data.img}" style="max-width:100%">`;
-            if(data.type === 'audio') content = `<audio controls src="${data.audio}"></audio>`;
-            div.innerHTML = `<b>${data.user}:</b><br>${content}`;
-            chatHistory[data.room].push({ element: div });
-            if(data.room === sala) {
-                const m = document.getElementById('messages');
-                m.appendChild(div);
-                m.scrollTop = m.scrollHeight;
+            if(i.value) {
+                socket.emit('chat message', { room: sala, user: user, text: i.value });
+                i.value = "";
             }
-        });
-
-        socket.on('update ranking', (ranking) => {
-            const list = document.getElementById('ranking-list');
-            list.innerHTML = "";
-            ranking.forEach((u, i) => {
-                const div = document.createElement('div');
-                div.className = "rank-item";
-                div.innerHTML = `<span>${i+1}. ${u.name}</span> <span>${u.score}</span>`;
-                list.appendChild(div);
-            });
-        });
-
-        socket.on('error message', (msg) => { alert(msg); window.location.reload(); });
-
-        async function iniciarAudio() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-                mediaRecorder.onstop = () => {
-                    const blob = new Blob(audioChunks, { type: 'audio/ogg; codecs=opus' });
-                    const reader = new FileReader();
-                    reader.onload = e => socket.emit('chat message', { room: sala, user: user, audio: e.target.result, type: 'audio' });
-                    reader.readAsDataURL(blob);
-                    audioChunks = [];
-                };
-                mediaRecorder.start();
-            } catch (err) { alert("Microfone indisponível."); }
         }
-        function pararAudio() { mediaRecorder?.stop(); }
+
+        socket.on('chat message', d => {
+            const msgArea = document.getElementById('messages');
+            const p = document.createElement('p');
+            p.innerHTML = `<b>${d.user}:</b> ${d.text}`;
+            msgArea.appendChild(p);
+            msgArea.scrollTop = msgArea.scrollHeight;
+        });
+
+        socket.on('update ranking', r => {
+            const list = document.getElementById('ranking-list');
+            list.innerHTML = r.map((u, i) => `<div style="padding:3px 0;">${i+1}. ${u.name} - ${u.score}</div>`).join('');
+        });
+
+        socket.on('error message', m => {
+            alert(m);
+            location.reload();
+        });
+
+        window.onresize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
     </script>
 </body>
 </html>
