@@ -73,7 +73,6 @@ io.on('connection', (socket) => {
     });
 
     socket.on('join room', (room) => { 
-        // Sai de todas as salas anteriores (exceto a sala privada do socket)
         socket.rooms.forEach(r => { if(r !== socket.id) socket.leave(r); });
         socket.join(room); 
         enviarRanking(room); 
@@ -92,7 +91,6 @@ io.on('connection', (socket) => {
         if (!name) return;
         const score = userScores[name] ? userScores[name][msg.room] : 0;
         msg.user = name + getEmoji(score);
-        // Garante que o room original seja enviado de volta para o cliente organizar
         io.to(msg.room).emit('chat message', msg);
     });
 
