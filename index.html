@@ -72,7 +72,7 @@
     <script>
         const socket = io();
         let user = "", sala = "sky", placar = { sky:0, hell:0 };
-        const historicoMensagens = { sky: [], hell: [] }; // NOVO: Armazena mensagens separadas
+        const historicoMensagens = { sky: [], hell: [] };
         
         const canvas = document.getElementById('canvas-particles');
         const ctx = canvas.getContext('2d');
@@ -104,7 +104,6 @@
             sala = m;
             const isSky = m === 'sky';
             
-            // 1. Visual do Layout
             document.documentElement.style.setProperty('--main', isSky ? '#ffb7ce' : '#ff3300');
             document.documentElement.style.setProperty('--bg', isSky ? '#ffffff' : '#000000');
             document.documentElement.style.setProperty('--text', isSky ? '#000' : '#ffffff');
@@ -112,10 +111,8 @@
             document.getElementById('btn-sky').classList.toggle('active', isSky);
             document.getElementById('btn-hell').classList.toggle('active', !isSky);
             
-            // 2. Pontuação da Sala
             document.getElementById('score').innerText = placar[sala] || 0;
             
-            // 3. Limpar e Reconstruir Chat
             const mBox = document.getElementById('messages');
             mBox.innerHTML = "";
             historicoMensagens[sala].forEach(d => renderizarMensagem(d));
@@ -128,14 +125,20 @@
             particles.forEach((p) => {
                 if(!p.exploded && e.clientX > p.x && e.clientX < p.x+50 && e.clientY > p.y-50 && e.clientY < p.y) {
                     p.exploded = true; 
-                    placar[sala]++; // Pontuação agora é na gaveta da sala atual
+                    placar[sala]++;
                     const pt = placar[sala];
                     document.getElementById('score').innerText = pt;
                     
+                    // MENSAGENS DE CONQUISTA ATUALIZADAS
                     if(pt === 100) showAchievement("Nível 💩: Tá ruim hein!");
                     if(pt === 200) showAchievement("Nível 🤡: Começou a brincadeira!");
                     if(pt === 300) showAchievement("Nível ⚡: Tá ficando elétrico!");
+                    if(pt === 400) showAchievement("Nível ⚔️: Pronto para a guerra!");
                     if(pt === 500) showAchievement("Nível 🛡️: Um verdadeiro Guardião!");
+                    if(pt === 600) showAchievement("Nível 🔱: Poder de um Deus!");
+                    if(pt === 700) showAchievement("Nível 🔮: Você vê o futuro!");
+                    if(pt === 800) showAchievement("Nível 🐉: Fúria do Dragão!");
+                    if(pt === 900) showAchievement("Nível 💎: Preciosidade Pura!");
                     if(pt === 1000) showAchievement("Nível 👑: O REI DA BIPOLARIDADE!");
 
                     socket.emit('update score', { room: sala });
@@ -206,10 +209,7 @@
         }
 
         socket.on('chat message', d => {
-            // Salva no histórico da sala de origem
             if (historicoMensagens[d.room]) historicoMensagens[d.room].push(d);
-            
-            // Só renderiza na tela se o usuário estiver na sala onde a mensagem chegou
             if (d.room === sala) renderizarMensagem(d);
         });
 
