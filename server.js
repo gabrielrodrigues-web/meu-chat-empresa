@@ -3,7 +3,7 @@ const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http, { 
     cors: { origin: "*" },
-    maxHttpBufferSize: 1e8 
+    maxHttpBufferSize: 1e8 // 100MB para fotos e áudios pesados
 });
 
 const connectedUsers = {}; 
@@ -15,7 +15,7 @@ const ADMIN_PASSWORD = "050100@g";
 app.use(express.static(__dirname));
 app.get('/', (req, res) => res.sendFile(__dirname + '/index.html'));
 
-// FUNÇÃO DO SISTEMA DE EMOJIS POR NÍVEL
+// SISTEMA DE EMOJIS POR NÍVEL
 function getEmoji(score) {
     if (score >= 1000) return " 👑";
     if (score >= 900) return " 💎";
@@ -32,10 +32,9 @@ function getEmoji(score) {
 
 io.on('connection', (socket) => {
     const userIP = socket.handshake.address;
-    const now = Date.now();
 
-    if (ipBanHistory[userIP] && now < ipBanHistory[userIP].expires) {
-        socket.emit('error message', `BANIDO.`);
+    if (ipBanHistory[userIP] && Date.now() < ipBanHistory[userIP].expires) {
+        socket.emit('error message', `ACESSO NEGADO.`);
         socket.disconnect();
         return;
     }
@@ -49,8 +48,8 @@ io.on('connection', (socket) => {
             return callback({ success: false, message: "Senha incorreta!" });
         }
         userPasswords[nameLower] = data.password;
-
         connectedUsers[socket.id] = cleanName;
+
         if (!userScores[cleanName]) userScores[cleanName] = { sky: 0, hell: 0 };
         callback({ success: true, scores: userScores[cleanName] });
     });
@@ -63,10 +62,9 @@ io.on('connection', (socket) => {
                 if (name.toLowerCase() === targetLower) {
                     const ts = io.sockets.sockets.get(id);
                     if (ts) {
-                        const ip = ts.handshake.address;
-                        ipBanHistory[ip] = { expires: Date.now() + 60000 };
-                        io.emit('chat message', { room: 'sky', user: '🛡️ ADMIN', text: `🚨 ${name} FOI BANIDO!` });
-                        io.emit('chat message', { room: 'hell', user: '🛡️ ADMIN', text: `🚨 ${name} FOI BANIDO!` });
+                        ipBanHistory[ts.handshake.address] = { expires: Date.now() + 600000 };
+                        io.emit('chat message', { room: 'sky', user: '🛡️ ADMIN', text: `🚨 ${name} BANIDO!` });
+                        io.emit('chat message', { room: 'hell', user: '🛡️ ADMIN', text: `🚨 ${name} BANIDO!` });
                         ts.disconnect();
                     }
                 }
@@ -87,8 +85,9 @@ io.on('connection', (socket) => {
 
     socket.on('chat message', (msg) => {
         const name = connectedUsers[socket.id];
-        const score = (name && userScores[name]) ? userScores[name][msg.room] : 0;
-        // Adiciona o emoji dinamicamente no chat baseado no score daquela sala
+        if (!name) return;
+        const score = userScores[name] ? userScores[name][msg.room] : 0;
+        // Atribui o nome com emoji no servidor para evitar fraudes
         msg.user = name + getEmoji(score);
         io.to(msg.room).emit('chat message', msg);
     });
@@ -107,4 +106,4 @@ io.on('connection', (socket) => {
     }
 });
 
-http.listen(process.env.PORT || 10000, () => console.log('BIPOLAR ON'));
+http.listen(process.env.PORT || 10000, () => console.log('BIPOLAR RODANDO'));
