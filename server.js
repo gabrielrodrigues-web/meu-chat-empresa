@@ -1,54 +1,33 @@
-const express = require('express');
-const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http, {
-    cors: { origin: "*" }
-});
+<div class="stage">
+    <div id="ranking-box">
+        <div style="font-weight:bold; margin-bottom:5px; text-align:center;">TOP 5 ELITE</div>
+        <div id="ranking-list"></div>
+    </div>
+    ```
 
-// Armazena usuários conectados: { socketId: "Apelido" }
-const connectedUsers = {};
-
-app.use(express.static(__dirname));
-
-app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/index.html');
-});
-
-io.on('connection', (socket) => {
-    console.log('Usuário conectado');
-
-    // NOVO: Verifica se o nome já existe antes de entrar
-    socket.on('login request', (nickname, callback) => {
-        const users = Object.values(connectedUsers);
-        // Verifica se o nome existe (ignorando maiúsculas/minúsculas)
-        const nameExists = users.some(user => user.toLowerCase() === nickname.toLowerCase());
-
-        if (nameExists) {
-            callback(false); // Nome proibido (já existe)
-        } else {
-            connectedUsers[socket.id] = nickname; // Salva o usuário
-            callback(true); // Nome permitido
+**No final do seu `<script>`, substitua o evento de `mousedown` e adicione o receptor do ranking:**
+```javascript
+// Atualize o listener de clique para avisar o servidor
+canvas.addEventListener('mousedown', (e) => {
+    particles.forEach((p) => {
+        if(!p.exploded && e.clientX > p.x && e.clientX < p.x + 45 && e.clientY > p.y - 40 && e.clientY < p.y + 10) {
+            p.exploded = true;
+            placar[sala]++;
+            document.getElementById('score').innerText = placar[sala];
+            // NOVO: Avisa o servidor que você marcou ponto
+            socket.emit('update score', { room: sala });
         }
     });
-
-    socket.on('join room', (room) => {
-        socket.leaveAll();
-        socket.join(room);
-        console.log('Usuário entrou na sala: ' + room);
-    });
-
-    socket.on('chat message', (msg) => {
-        io.to(msg.room).emit('chat message', msg);
-    });
-
-    socket.on('disconnect', () => {
-        console.log('Usuário desconectado: ' + connectedUsers[socket.id]);
-        // Remove o nome da lista quando o usuário sai
-        delete connectedUsers[socket.id];
-    });
 });
 
-const PORT = process.env.PORT || 10000;
-http.listen(PORT, () => {
-    console.log('SERVIDOR RODANDO NA PORTA ' + PORT);
+// NOVO: Escuta a atualização do ranking vinda do servidor
+socket.on('update ranking', (ranking) => {
+    const list = document.getElementById('ranking-list');
+    list.innerHTML = "";
+    ranking.forEach((u, i) => {
+        const div = document.createElement('div');
+        div.className = "rank-item";
+        div.innerHTML = `<span>${i+1}. ${u.name}</span> <span>${u.score}</span>`;
+        list.appendChild(div);
+    });
 });
