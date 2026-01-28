@@ -5,8 +5,8 @@ const io = require('socket.io')(http, { cors: { origin: "*" } });
 
 const connectedUsers = {}; 
 const userScores = {}; 
-const reservedNames = {}; // Guarda { "nome": timestamp_expiracao }
-const bannedIPs = new Set(); 
+const reservedNames = {}; 
+const ipBanHistory = {}; // Guarda { count: 0, expires: 0 } por IP
 
 const ADMIN_PASSWORD = "050100@g"; 
 
@@ -15,24 +15,25 @@ app.get('/', (req, res) => res.sendFile(__dirname + '/index.html'));
 
 io.on('connection', (socket) => {
     const userIP = socket.handshake.address;
+    const now = Date.now();
 
-    if (bannedIPs.has(userIP)) {
-        socket.emit('error message', 'Você está banido deste servidor.');
+    // Verifica se o IP está cumprindo tempo de banimento
+    if (ipBanHistory[userIP] && now < ipBanHistory[userIP].expires) {
+        const resto = Math.ceil((ipBanHistory[userIP].expires - now) / 60000);
+        socket.emit('error message', `Você está temporariamente bloqueado. Tente novamente em ${resto} minuto(s).`);
         socket.disconnect();
         return;
     }
 
     socket.on('login request', (nickname, callback) => {
-        const now = Date.now();
-        const cleanName = nickname.trim().substring(0, 10); // Limite de 10 letras
-
+        const cleanName = nickname.trim().substring(0, 10);
         const isOnline = Object.values(connectedUsers).some(u => u.toLowerCase() === cleanName.toLowerCase());
         const isReserved = reservedNames[cleanName.toLowerCase()] && now < reservedNames[cleanName.toLowerCase()];
 
         if (isOnline) {
             callback({ success: false, message: "Esse apelido já está em uso!" });
         } else if (isReserved) {
-            callback({ success: false, message: "Este nome está reservado. Tente outro ou aguarde 1 hora." });
+            callback({ success: false, message: "Nome reservado. Aguarde 1 hora." });
         } else {
             connectedUsers[socket.id] = cleanName;
             if (!userScores[cleanName]) userScores[cleanName] = { sky: 0, hell: 0 };
@@ -42,16 +43,38 @@ io.on('connection', (socket) => {
 
     socket.on('admin ban', (data) => {
         if (data.password === ADMIN_PASSWORD) {
+            const targetName = data.targetName;
+            const targetLower = targetName.toLowerCase();
+
+            // 1. Remove pontos e reserva para sumir do ranking na hora
+            delete userScores[targetName];
+            delete reservedNames[targetLower];
+
+            // 2. Procura o usuário online para pegar o IP e banir
             for (const [id, name] of Object.entries(connectedUsers)) {
-                if (name.toLowerCase() === data.targetName.toLowerCase()) {
+                if (name.toLowerCase() === targetLower) {
                     const targetSocket = io.sockets.sockets.get(id);
                     if (targetSocket) {
-                        bannedIPs.add(targetSocket.handshake.address);
-                        targetSocket.emit('error message', 'Você foi banido pelo administrador.');
+                        const ip = targetSocket.handshake.address;
+                        
+                        // Lógica Progressiva:
+                        if (!ipBanHistory[ip]) ipBanHistory[ip] = { count: 0, expires: 0 };
+                        ipBanHistory[ip].count++;
+
+                        let minutos = 0;
+                        if (ipBanHistory[ip].count === 1) minutos = 1;
+                        else minutos = (ipBanHistory[ip].count - 1) * 5;
+
+                        ipBanHistory[ip].expires = Date.now() + (minutos * 60000);
+
+                        targetSocket.emit('error message', `Banido! Você poderá voltar em ${minutos} min com outro nick.`);
                         targetSocket.disconnect();
                     }
                 }
             }
+            // Atualiza o ranking visual para todos
+            enviarRanking('sky');
+            enviarRanking('hell');
         }
     });
 
@@ -69,15 +92,12 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('chat message', (msg) => {
-        io.to(msg.room).emit('chat message', msg);
-    });
+    socket.on('chat message', (msg) => io.to(msg.room).emit('chat message', msg));
 
     socket.on('disconnect', () => {
         const name = connectedUsers[socket.id];
         if (name) {
-            // Reserva o nome por 1 hora (3600000 ms)
-            reservedNames[name.toLowerCase()] = Date.now() + 3600000;
+            reservedNames[name.toLowerCase()] = Date.now() + 3600000; 
             delete connectedUsers[socket.id];
         }
     });
@@ -86,11 +106,10 @@ io.on('connection', (socket) => {
         const ranking = Object.keys(userScores)
             .map(name => ({ name, score: userScores[name][room] || 0 }))
             .filter(user => user.score > 0)
-            .sort((a, b) => b.score - a.score)
-            .slice(0, 5);
+            .sort((a, b) => b.score - a.score).slice(0, 5);
         io.to(room).emit('update ranking', ranking);
     }
 });
 
 const PORT = process.env.PORT || 10000;
-http.listen(PORT, () => console.log('SERVIDOR RODANDO'));
+http.listen(PORT, () => console.log('SERVIDOR RODANDO NA PORTA ' + PORT));
