@@ -6,7 +6,7 @@ const io = require('socket.io')(http, { cors: { origin: "*" } });
 const connectedUsers = {}; 
 const userScores = {}; 
 const reservedNames = {}; 
-const ipBanHistory = {}; // Guarda { count: 0, expires: 0 } por IP
+const ipBanHistory = {}; // Armazena { count: 0, expires: 0 }
 
 const ADMIN_PASSWORD = "050100@g"; 
 
@@ -17,10 +17,10 @@ io.on('connection', (socket) => {
     const userIP = socket.handshake.address;
     const now = Date.now();
 
-    // Verifica se o IP está cumprindo tempo de banimento
+    // Bloqueio por IP antes de conectar
     if (ipBanHistory[userIP] && now < ipBanHistory[userIP].expires) {
         const resto = Math.ceil((ipBanHistory[userIP].expires - now) / 60000);
-        socket.emit('error message', `Você está temporariamente bloqueado. Tente novamente em ${resto} minuto(s).`);
+        socket.emit('error message', `ACESSO NEGADO. Você ainda está banido por ${resto} min.`);
         socket.disconnect();
         return;
     }
@@ -46,33 +46,40 @@ io.on('connection', (socket) => {
             const targetName = data.targetName;
             const targetLower = targetName.toLowerCase();
 
-            // 1. Remove pontos e reserva para sumir do ranking na hora
+            // 1. Limpa o ranking e o nome imediatamente
             delete userScores[targetName];
             delete reservedNames[targetLower];
 
-            // 2. Procura o usuário online para pegar o IP e banir
+            let banTime = 0;
+            let targetFound = false;
+
+            // 2. Procura o infrator para punir o IP
             for (const [id, name] of Object.entries(connectedUsers)) {
                 if (name.toLowerCase() === targetLower) {
                     const targetSocket = io.sockets.sockets.get(id);
                     if (targetSocket) {
                         const ip = targetSocket.handshake.address;
                         
-                        // Lógica Progressiva:
                         if (!ipBanHistory[ip]) ipBanHistory[ip] = { count: 0, expires: 0 };
                         ipBanHistory[ip].count++;
 
-                        let minutos = 0;
-                        if (ipBanHistory[ip].count === 1) minutos = 1;
-                        else minutos = (ipBanHistory[ip].count - 1) * 5;
+                        // Lógica: 1ª vez = 1min | 2ª em diante = (count-1)*5min
+                        banTime = ipBanHistory[ip].count === 1 ? 1 : (ipBanHistory[ip].count - 1) * 5;
+                        ipBanHistory[ip].expires = Date.now() + (banTime * 60000);
 
-                        ipBanHistory[ip].expires = Date.now() + (minutos * 60000);
+                        // Avisa o chat e desconecta
+                        const aviso = `🚨 SISTEMA: ${targetName} foi banido por ${banTime} minutos.`;
+                        io.emit('chat message', { room: 'sky', user: '🛡️ ADMIN', text: aviso });
+                        io.emit('chat message', { room: 'hell', user: '🛡️ ADMIN', text: aviso });
 
-                        targetSocket.emit('error message', `Banido! Você poderá voltar em ${minutos} min com outro nick.`);
+                        targetSocket.emit('error message', `Você foi banido por ${banTime} minutos.`);
                         targetSocket.disconnect();
+                        targetFound = true;
                     }
                 }
             }
-            // Atualiza o ranking visual para todos
+
+            // 3. Atualiza o ranking visual para todos (remove o fantasma)
             enviarRanking('sky');
             enviarRanking('hell');
         }
