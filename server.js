@@ -5,10 +5,9 @@ const io = require('socket.io')(http, { cors: { origin: "*" } });
 
 const connectedUsers = {}; 
 const userScores = {}; 
-const reservedNames = {}; // Guarda { "nome": timestamp_expiracao }
 const bannedIPs = new Set(); 
+const reservedNames = {}; // Guarda { "nome": timestamp_expiracao }
 
-// SENHA DEFINIDA
 const ADMIN_PASSWORD = "050100@g"; 
 
 app.use(express.static(__dirname));
@@ -24,9 +23,9 @@ io.on('connection', (socket) => {
     }
 
     socket.on('login request', (nickname, callback) => {
+        const cleanName = nickname.trim().substring(0, 10);
         const now = Date.now();
-        const cleanName = nickname.trim().substring(0, 10); 
-
+        
         const isOnline = Object.values(connectedUsers).some(u => u.toLowerCase() === cleanName.toLowerCase());
         const isReserved = reservedNames[cleanName.toLowerCase()] && now < reservedNames[cleanName.toLowerCase()];
 
@@ -42,30 +41,18 @@ io.on('connection', (socket) => {
     });
 
     socket.on('admin ban', (data) => {
-        if (data.password !== ADMIN_PASSWORD) {
-            socket.emit('error message', 'Acesso negado: Senha incorreta.');
-            return;
-        }
-        const targetName = data.targetName;
-        let found = false;
+        if (data.password !== ADMIN_PASSWORD) return;
+        
         for (const [id, name] of Object.entries(connectedUsers)) {
-            if (name.toLowerCase() === targetName.toLowerCase()) {
+            if (name.toLowerCase() === data.targetName.toLowerCase()) {
                 const targetSocket = io.sockets.sockets.get(id);
                 if (targetSocket) {
                     bannedIPs.add(targetSocket.handshake.address);
                     targetSocket.emit('error message', 'Você foi banido pelo administrador.');
                     targetSocket.disconnect();
-                    found = true;
                 }
             }
         }
-        if (found) socket.emit('chat message', { room: 'sky', user: 'SYSTEM', text: `${targetName} foi banido.` });
-    });
-
-    socket.on('join room', (room) => {
-        socket.leaveAll();
-        socket.join(room);
-        enviarRanking(room);
     });
 
     socket.on('update score', (data) => {
@@ -80,9 +67,16 @@ io.on('connection', (socket) => {
         io.to(msg.room).emit('chat message', msg);
     });
 
+    socket.on('join room', (room) => {
+        socket.leaveAll();
+        socket.join(room);
+        enviarRanking(room);
+    });
+
     socket.on('disconnect', () => {
         const name = connectedUsers[socket.id];
         if (name) {
+            // Reserva o nome por 20 minutos após sair
             reservedNames[name.toLowerCase()] = Date.now() + (20 * 60 * 1000);
             delete connectedUsers[socket.id];
         }
@@ -91,7 +85,7 @@ io.on('connection', (socket) => {
     function enviarRanking(room) {
         const ranking = Object.keys(userScores)
             .map(name => ({ name, score: userScores[name][room] || 0 }))
-            .filter(user => user.score > 0)
+            .filter(u => u.score > 0)
             .sort((a, b) => b.score - a.score).slice(0, 5);
         io.to(room).emit('update ranking', ranking);
     }
