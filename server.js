@@ -5,8 +5,8 @@ const io = require('socket.io')(http, { cors: { origin: "*" } });
 
 const connectedUsers = {}; 
 const userScores = {}; 
-const bannedIPs = new Set(); 
 const reservedNames = {}; // Guarda { "nome": timestamp_expiracao }
+const bannedIPs = new Set(); 
 
 const ADMIN_PASSWORD = "050100@g"; 
 
@@ -23,16 +23,16 @@ io.on('connection', (socket) => {
     }
 
     socket.on('login request', (nickname, callback) => {
-        const cleanName = nickname.trim().substring(0, 10);
         const now = Date.now();
-        
+        const cleanName = nickname.trim().substring(0, 10); // Limite de 10 letras
+
         const isOnline = Object.values(connectedUsers).some(u => u.toLowerCase() === cleanName.toLowerCase());
         const isReserved = reservedNames[cleanName.toLowerCase()] && now < reservedNames[cleanName.toLowerCase()];
 
-        if (isOnline || isReserved) {
-            callback({ success: false, message: "Nome em uso ou reservado (aguarde 20min)." });
-        } else if (cleanName.length < 2) {
-            callback({ success: false, message: "Nome muito curto!" });
+        if (isOnline) {
+            callback({ success: false, message: "Esse apelido já está em uso!" });
+        } else if (isReserved) {
+            callback({ success: false, message: "Este nome está reservado. Tente outro ou aguarde 1 hora." });
         } else {
             connectedUsers[socket.id] = cleanName;
             if (!userScores[cleanName]) userScores[cleanName] = { sky: 0, hell: 0 };
@@ -41,18 +41,24 @@ io.on('connection', (socket) => {
     });
 
     socket.on('admin ban', (data) => {
-        if (data.password !== ADMIN_PASSWORD) return;
-        
-        for (const [id, name] of Object.entries(connectedUsers)) {
-            if (name.toLowerCase() === data.targetName.toLowerCase()) {
-                const targetSocket = io.sockets.sockets.get(id);
-                if (targetSocket) {
-                    bannedIPs.add(targetSocket.handshake.address);
-                    targetSocket.emit('error message', 'Você foi banido pelo administrador.');
-                    targetSocket.disconnect();
+        if (data.password === ADMIN_PASSWORD) {
+            for (const [id, name] of Object.entries(connectedUsers)) {
+                if (name.toLowerCase() === data.targetName.toLowerCase()) {
+                    const targetSocket = io.sockets.sockets.get(id);
+                    if (targetSocket) {
+                        bannedIPs.add(targetSocket.handshake.address);
+                        targetSocket.emit('error message', 'Você foi banido pelo administrador.');
+                        targetSocket.disconnect();
+                    }
                 }
             }
         }
+    });
+
+    socket.on('join room', (room) => {
+        socket.leaveAll();
+        socket.join(room);
+        enviarRanking(room);
     });
 
     socket.on('update score', (data) => {
@@ -67,17 +73,11 @@ io.on('connection', (socket) => {
         io.to(msg.room).emit('chat message', msg);
     });
 
-    socket.on('join room', (room) => {
-        socket.leaveAll();
-        socket.join(room);
-        enviarRanking(room);
-    });
-
     socket.on('disconnect', () => {
         const name = connectedUsers[socket.id];
         if (name) {
-            // Reserva o nome por 20 minutos após sair
-            reservedNames[name.toLowerCase()] = Date.now() + (20 * 60 * 1000);
+            // Reserva o nome por 1 hora (3600000 ms)
+            reservedNames[name.toLowerCase()] = Date.now() + 3600000;
             delete connectedUsers[socket.id];
         }
     });
@@ -85,11 +85,12 @@ io.on('connection', (socket) => {
     function enviarRanking(room) {
         const ranking = Object.keys(userScores)
             .map(name => ({ name, score: userScores[name][room] || 0 }))
-            .filter(u => u.score > 0)
-            .sort((a, b) => b.score - a.score).slice(0, 5);
+            .filter(user => user.score > 0)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 5);
         io.to(room).emit('update ranking', ranking);
     }
 });
 
 const PORT = process.env.PORT || 10000;
-http.listen(PORT, () => console.log('SERVIDOR RODANDO NA PORTA ' + PORT));
+http.listen(PORT, () => console.log('SERVIDOR RODANDO'));
