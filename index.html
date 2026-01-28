@@ -1,6 +1,4 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
+<!DOCTYPE html><html lang="pt-br"><head>
     <meta charset="UTF-8">
     <title>BIPOLAR - ELITE SYSTEM</title>
     <script src="/socket.io/socket.io.js"></script>
@@ -30,9 +28,7 @@
         #msg-in { width: 100%; padding: 10px; border: 1px solid var(--main); background: none; color: var(--text); margin-bottom: 10px; }
         .controls { display: flex; gap: 5px; }
         .controls button { flex: 1; padding: 10px; border: 1px solid var(--main); background: none; color: var(--main); cursor: pointer; font-weight: bold; }
-    </style>
-</head>
-<body>
+    </style></head><body>
     <div id="login-screen">
         <div class="login-box">
             <h1 style="color:#ff0055;">BIPOLAR</h1>
@@ -76,6 +72,8 @@
     <script>
         const socket = io();
         let user = "", sala = "sky", placar = { sky:0, hell:0 };
+        const historicoMensagens = { sky: [], hell: [] }; // NOVO: Armazena mensagens separadas
+        
         const canvas = document.getElementById('canvas-particles');
         const ctx = canvas.getContext('2d');
         let particles = [], recorder, chunks = [], isRec = false;
@@ -95,29 +93,42 @@
                     user = n; placar = res.scores;
                     document.getElementById('login-screen').style.display = 'none';
                     document.getElementById('main-app').style.display = 'block';
-                    document.getElementById('score').innerText = placar[sala];
+                    document.getElementById('score').innerText = placar[sala] || 0;
                     resize(); animate(); socket.emit('join room', sala);
                 } else alert(res.message || "Erro");
             });
         }
 
         function mudar(m) {
+            if (sala === m) return;
             sala = m;
             const isSky = m === 'sky';
+            
+            // 1. Visual do Layout
             document.documentElement.style.setProperty('--main', isSky ? '#ffb7ce' : '#ff3300');
             document.documentElement.style.setProperty('--bg', isSky ? '#ffffff' : '#000000');
             document.documentElement.style.setProperty('--text', isSky ? '#000' : '#ffffff');
             document.getElementById('big-icon').innerText = isSky ? '💖' : '💀';
             document.getElementById('btn-sky').classList.toggle('active', isSky);
             document.getElementById('btn-hell').classList.toggle('active', !isSky);
-            document.getElementById('score').innerText = placar[sala];
-            particles = []; socket.emit('join room', sala);
+            
+            // 2. Pontuação da Sala
+            document.getElementById('score').innerText = placar[sala] || 0;
+            
+            // 3. Limpar e Reconstruir Chat
+            const mBox = document.getElementById('messages');
+            mBox.innerHTML = "";
+            historicoMensagens[sala].forEach(d => renderizarMensagem(d));
+
+            particles = []; 
+            socket.emit('join room', sala);
         }
 
         canvas.addEventListener('mousedown', (e) => {
             particles.forEach((p) => {
                 if(!p.exploded && e.clientX > p.x && e.clientX < p.x+50 && e.clientY > p.y-50 && e.clientY < p.y) {
-                    p.exploded = true; placar[sala]++;
+                    p.exploded = true; 
+                    placar[sala]++; // Pontuação agora é na gaveta da sala atual
                     const pt = placar[sala];
                     document.getElementById('score').innerText = pt;
                     
@@ -152,16 +163,12 @@
             i.value = "";
         }
 
-        // FIX DAS FOTOS: Função Robusta
         function uploadImg(input) {
             if (input.files && input.files[0]) {
                 const r = new FileReader();
                 r.onload = (e) => {
-                    socket.emit('chat message', { 
-                        room: sala, 
-                        img: e.target.result 
-                    });
-                    input.value = ""; // Limpa para permitir re-envio
+                    socket.emit('chat message', { room: sala, img: e.target.result });
+                    input.value = "";
                 };
                 r.readAsDataURL(input.files[0]);
             }
@@ -188,7 +195,7 @@
             }
         }
 
-        socket.on('chat message', d => {
+        function renderizarMensagem(d) {
             const m = document.getElementById('messages');
             const div = document.createElement('div'); div.className = "msg";
             let h = `<b>${d.user}:</b><br>`;
@@ -196,6 +203,14 @@
             if(d.img) h += `<img src="${d.img}">`;
             if(d.audio) h += `<audio controls src="${d.audio}"></audio>`;
             div.innerHTML = h; m.appendChild(div); m.scrollTop = m.scrollHeight;
+        }
+
+        socket.on('chat message', d => {
+            // Salva no histórico da sala de origem
+            if (historicoMensagens[d.room]) historicoMensagens[d.room].push(d);
+            
+            // Só renderiza na tela se o usuário estiver na sala onde a mensagem chegou
+            if (d.room === sala) renderizarMensagem(d);
         });
 
         socket.on('update ranking', r => {
@@ -204,6 +219,4 @@
 
         socket.on('error message', msg => { alert(msg); location.reload(); });
         window.onresize = resize;
-    </script>
-</body>
-</html>
+    </script></body></html>
