@@ -2,50 +2,49 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BIPOLAR - ELITE SYSTEM</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         :root { --main: #ffb7ce; --bg: #ffffff; --text: #000; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', Courier, monospace; }
-        body { background: var(--bg); height: 100vh; overflow: hidden; color: var(--text); transition: 0.5s; }
+        body { background: var(--bg); height: 100vh; overflow: hidden; color: var(--text); transition: 0.5s; display: flex; }
 
         #login-screen { position: fixed; inset: 0; background: #000; z-index: 2000; display: flex; align-items: center; justify-content: center; }
-        .login-box { border: 3px solid #ff0055; padding: 40px; border-radius: 10px; text-align: center; background: #050505; width: 350px; box-shadow: 0 0 20px #ff0055; }
-        input[type="text"] { width: 100%; padding: 15px; margin: 15px 0; background: #111; border: 1px solid #ff0055; color: #fff; outline: none; }
+        .login-box { border: 3px solid #ff0055; padding: 40px; border-radius: 10px; text-align: center; background: #050505; width: 350px; }
         
-        #main-app { display: none; height: 100vh; width: 100%; position: relative; }
-        #canvas-particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: crosshair; z-index: 1; }
+        #main-app { display: none; width: 100%; height: 100%; position: relative; }
+        #canvas-particles { position: absolute; top: 0; left: 0; width: calc(100% - 550px); height: 100%; cursor: crosshair; z-index: 1; }
 
         .stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 5; pointer-events: none; }
-        .nav-bar { position: absolute; top: 20px; display: flex; gap: 10px; pointer-events: auto; }
-        .nav-btn { padding: 10px 15px; border: 2px solid var(--main); cursor: pointer; background: var(--bg); color: var(--text); font-weight: bold; font-size: 12px; }
-        .nav-btn.active { background: var(--main); color: #fff; box-shadow: 0 0 15px var(--main); }
+        .nav-bar { position: absolute; top: 20px; left: 20px; display: flex; gap: 10px; pointer-events: auto; }
+        .nav-btn { padding: 10px 15px; border: 2px solid var(--main); cursor: pointer; background: var(--bg); color: var(--text); font-weight: bold; }
+        .nav-btn.active { background: var(--main); color: #fff; }
 
-        #ranking-box {
-            position: absolute; top: 80px; left: 20px;
-            background: rgba(0,0,0,0.05); padding: 10px;
-            border: 1px solid var(--main); font-size: 11px;
-            z-index: 100; pointer-events: none; width: 160px;
-            color: var(--text);
-        }
-        .rank-item { margin-bottom: 5px; border-bottom: 1px dotted var(--main); display: flex; justify-content: space-between; }
-
-        #big-icon { font-size: 100px; user-select: none; filter: drop-shadow(0 0 10px var(--main)); }
-        #score { font-size: 40px; font-weight: bold; color: var(--main); margin-top: 5px; }
-
-        .chat-sidebar { 
-            width: 550px; background: var(--bg); border-left: 3px solid var(--main); 
-            display: flex; flex-direction: column; z-index: 10; position: relative;
-        }
-        #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { background: rgba(0,0,0,0.03); padding: 12px; border: 1px solid rgba(0,0,0,0.1); font-size: 14px; border-left: 4px solid var(--main); color: var(--text); animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        #ranking-box { position: absolute; top: 80px; left: 20px; background: rgba(0,0,0,0.05); padding: 10px; border: 1px solid var(--main); width: 180px; z-index: 100; }
         
-        .input-area { padding: 15px; background: var(--bg); border-top: 1px solid rgba(0,0,0,0.1); }
-        .controls { display: flex; gap: 5px; margin-top: 10px; }
-        .controls button, .controls label { flex: 1; padding: 10px; font-size: 11px; background: var(--bg); color: var(--main); border: 1px solid var(--main); cursor: pointer; text-align: center; font-weight: bold; }
-        #msg-in { padding: 12px; background: rgba(0,0,0,0.02); border: 1px solid var(--main); color: var(--text); outline: none; width: 100%; }
+        #big-icon { font-size: 100px; filter: drop-shadow(0 0 10px var(--main)); transition: 0.3s; }
+        #score { font-size: 50px; font-weight: bold; color: var(--main); margin-bottom: 5px; }
+
+        /* NOVO: Estilo Neon para Conquistas */
+        #achievement-msg { 
+            height: 40px; 
+            font-size: 22px; 
+            font-weight: bold; 
+            color: #ff0000; 
+            text-shadow: 0 0 8px #ff0000, 0 0 15px #ff0000; 
+            opacity: 0; 
+            transition: opacity 0.3s;
+            text-align: center;
+        }
+
+        .chat-sidebar { width: 550px; border-left: 3px solid var(--main); display: flex; flex-direction: column; background: var(--bg); z-index: 10; }
+        #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .msg { background: rgba(0,0,0,0.03); padding: 12px; border: 1px solid rgba(0,0,0,0.1); border-left: 4px solid var(--main); }
+        
+        .input-area { padding: 15px; border-top: 1px solid rgba(0,0,0,0.1); }
+        #msg-in { width: 100%; padding: 12px; border: 1px solid var(--main); background: none; color: var(--text); margin-bottom: 10px; }
+        .controls { display: flex; gap: 5px; }
+        .controls button { flex: 1; padding: 10px; border: 1px solid var(--main); background: none; color: var(--main); font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -53,7 +52,7 @@
         <div class="login-box">
             <h1 style="color:#ff0055">BIPOLAR</h1>
             <input type="text" id="nick" placeholder="APELIDO" maxlength="10">
-            <button onclick="entrar()" style="width:100%; padding:15px; background:#ff0055; color:#fff; border:none; font-weight:bold; cursor:pointer;">ACESSAR</button>
+            <button onclick="entrar()" style="width:100%; padding:10px; background:#ff0055; color:#fff; border:none; cursor:pointer; margin-top:15px;">ACESSAR</button>
         </div>
     </div>
 
@@ -65,25 +64,22 @@
                     <button id="btn-sky" class="nav-btn active" onclick="mudar('sky')">MODO CÉU 💖</button>
                     <button id="btn-hell" class="nav-btn" onclick="mudar('hell')">MODO INFERNAL 💀</button>
                 </div>
-
                 <div id="ranking-box">
-                    <div style="font-weight:bold; margin-bottom:5px; text-align:center; border-bottom: 2px solid var(--main);">TOP 5 ELITE</div>
+                    <div style="font-weight:bold; text-align:center; border-bottom: 2px solid var(--main);">TOP 5 ELITE</div>
                     <div id="ranking-list"></div>
                 </div>
-
                 <div id="big-icon">💖</div>
                 <div id="score">0</div>
+                <div id="achievement-msg"></div>
             </div>
-
             <div class="chat-sidebar">
                 <div id="messages"></div>
                 <div class="input-area">
                     <input type="text" id="msg-in" placeholder="Mensagem..." onkeypress="if(event.key==='Enter') enviar()">
                     <div class="controls">
                         <button onclick="enviar()">ENVIAR</button>
-                        <label for="img-up">IMAGEM</label>
-                        <input type="file" id="img-up" accept="image/*" style="display:none" onchange="enviarImagem(this)">
-                        <button id="rec-btn" onmousedown="iniciarAudio()" onmouseup="pararAudio()">🎤 GRAVAR</button>
+                        <button>IMAGEM</button>
+                        <button>🎤 GRAVAR</button>
                     </div>
                 </div>
             </div>
@@ -94,27 +90,28 @@
         const socket = io();
         let user = "", sala = "sky";
         let placar = { sky: 0, hell: 0 };
-        let chatHistory = { sky: [], hell: [] };
         const canvas = document.getElementById('canvas-particles');
         const ctx = canvas.getContext('2d');
         let particles = [];
-        let mediaRecorder, audioChunks = [];
+
+        function showAchievement(text) {
+            const el = document.getElementById('achievement-msg');
+            el.innerText = text;
+            el.style.opacity = '1';
+            setTimeout(() => { el.style.opacity = '0'; }, 2000);
+        }
 
         function entrar() {
-            const inputNome = document.getElementById('nick');
-            const nomeDigitado = inputNome.value.trim();
-            if(!nomeDigitado) return alert("Digite seu apelido!");
-
-            socket.emit('login request', nomeDigitado, (res) => {
-                if (res.success) {
-                    user = nomeDigitado.substring(0,10);
+            const n = document.getElementById('nick').value.trim();
+            if(!n) return;
+            socket.emit('login request', n, (res) => {
+                if(res.success) {
+                    user = n;
                     document.getElementById('login-screen').style.display = 'none';
                     document.getElementById('main-app').style.display = 'flex';
                     resize(); animate();
                     socket.emit('join room', sala);
-                } else {
-                    alert(res.message);
-                }
+                } else alert(res.message);
             });
         }
 
@@ -124,7 +121,7 @@
             if(m === 'sky') {
                 root.style.setProperty('--main', '#ffb7ce');
                 root.style.setProperty('--bg', '#ffffff');
-                root.style.setProperty('--text', '#000000');
+                root.style.setProperty('--text', '#000');
                 document.getElementById('big-icon').innerText = '💖';
             } else {
                 root.style.setProperty('--main', '#ff3300');
@@ -135,134 +132,67 @@
             document.getElementById('btn-sky').classList.toggle('active', m === 'sky');
             document.getElementById('btn-hell').classList.toggle('active', m === 'hell');
             document.getElementById('score').innerText = placar[sala];
-            renderMessages();
             particles = [];
             socket.emit('join room', sala);
         }
 
-        function renderMessages() {
-            const mContainer = document.getElementById('messages');
-            mContainer.innerHTML = "";
-            chatHistory[sala].forEach(msg => mContainer.appendChild(msg.element));
-            mContainer.scrollTop = mContainer.scrollHeight;
-        }
-
-        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-        window.onresize = resize;
-
-        class Particle {
-            constructor() {
-                this.x = Math.random() * (canvas.width - 570);
-                this.y = canvas.height + 50;
-                this.speed = Math.random() * 2 + 1;
-                this.icon = sala === 'sky' ? '💖' : '💀';
-                this.exploded = false;
-                this.timer = 0;
-            }
-            update() { 
-                if(!this.exploded) this.y -= this.speed; 
-                else this.timer++;
-            }
-            draw() {
-                ctx.font = "40px Arial";
-                ctx.fillText(this.exploded ? "💥" : this.icon, this.x, this.y);
-            }
-        }
-
         canvas.addEventListener('mousedown', (e) => {
             particles.forEach((p) => {
-                if(!p.exploded && e.clientX > p.x && e.clientX < p.x + 45 && e.clientY > p.y - 40 && e.clientY < p.y + 10) {
+                if(!p.exploded && e.clientX > p.x && e.clientX < p.x + 50 && e.clientY > p.y - 50 && e.clientY < p.y) {
                     p.exploded = true;
                     placar[sala]++;
                     document.getElementById('score').innerText = placar[sala];
                     
-                    // LÓGICA DE CONQUISTAS
-                    let pAtual = placar[sala];
-                    if(pAtual === 100) alert("Caramba, você está mandando bem!!!!");
-                    if(pAtual === 200) alert("Você é um verdadeiro viciado em serotonina");
-                    if(pAtual === 300) alert("Nossa, você perdeu a noção do tempo");
-                    if(pAtual === 400) alert("você é um gênio da mira");
-                    if(pAtual === 500) {
-                        alert("parabéns, você agora é o rei de explodir balões");
-                        user = user + " 👑";
+                    let pTotal = placar[sala];
+                    // SUBSTITUÍDO: Agora usa o efeito Neon em vez do alert
+                    if(pTotal === 100) showAchievement("Caramba, você está mandando bem!!!!");
+                    if(pTotal === 200) showAchievement("Você é um verdadeiro viciado em serotonina");
+                    if(pTotal === 300) showAchievement("Nossa, você perdeu a noção do tempo");
+                    if(pTotal === 400) showAchievement("você é um gênio da mira");
+                    if(pTotal === 500) { 
+                        showAchievement("parabéns, você agora é o rei de explodir balões"); 
+                        if(!user.includes("👑")) user += " 👑"; 
                     }
-
+                    
                     socket.emit('update score', { room: sala });
                 }
             });
         });
 
         function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            if(Math.random() < 0.04) particles.push(new Particle());
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+            if(Math.random() < 0.04) particles.push({ x: Math.random()*(canvas.width-50), y: canvas.height+50, exploded: false, timer: 0, speed: Math.random()*2+1 });
             particles.forEach((p, i) => {
-                p.update(); p.draw();
-                if(p.y < -50 || (p.exploded && p.timer > 10)) particles.splice(i, 1);
+                if(!p.exploded) p.y -= p.speed; else p.timer++;
+                ctx.font = "40px Arial";
+                ctx.fillText(p.exploded ? "💥" : (sala === 'sky' ? "💖" : "💀"), p.x, p.y);
+                if(p.y < -50 || p.timer > 10) particles.splice(i, 1);
             });
             requestAnimationFrame(animate);
         }
 
+        function resize() { canvas.width = window.innerWidth - 550; canvas.height = window.innerHeight; }
         function enviar() {
             const i = document.getElementById('msg-in');
-            if(!i.value) return;
-            socket.emit('chat message', { room: sala, user: user, text: i.value, type: 'text' });
+            if(i.value) socket.emit('chat message', { room: sala, user: user, text: i.value });
             i.value = "";
         }
 
-        function enviarImagem(input) {
-            const file = input.files[0];
-            const reader = new FileReader();
-            reader.onload = (e) => socket.emit('chat message', { room: sala, user: user, img: e.target.result, type: 'img' });
-            reader.readAsDataURL(file);
-        }
-
-        socket.on('chat message', (data) => {
+        socket.on('chat message', d => {
+            const m = document.getElementById('messages');
             const div = document.createElement('div');
             div.className = "msg";
-            let content = data.text;
-            if(data.type === 'img') content = `<img src="${data.img}" style="max-width:100%">`;
-            if(data.type === 'audio') content = `<audio controls src="${data.audio}"></audio>`;
-            div.innerHTML = `<b>${data.user}:</b><br>${content}`;
-            chatHistory[data.room].push({ element: div });
-            if(data.room === sala) {
-                const m = document.getElementById('messages');
-                m.appendChild(div);
-                m.scrollTop = m.scrollHeight;
-            }
+            div.innerHTML = `<b>${d.user}:</b><br>${d.text}`;
+            m.appendChild(div);
+            m.scrollTop = m.scrollHeight;
         });
 
-        socket.on('update ranking', (ranking) => {
-            const list = document.getElementById('ranking-list');
-            list.innerHTML = "";
-            ranking.forEach((u, i) => {
-                const div = document.createElement('div');
-                div.className = "rank-item";
-                div.innerHTML = `<span>${i+1}. ${u.name}</span> <span>${u.score}</span>`;
-                list.appendChild(div);
-            });
+        socket.on('update ranking', r => {
+            document.getElementById('ranking-list').innerHTML = r.map((u, i) => `<div style="display:flex; justify-content:space-between;"><span>${i+1}. ${u.name}</span><span>${u.score}</span></div>`).join('');
         });
 
-        socket.on('error message', (msg) => {
-            alert(msg);
-            window.location.reload();
-        });
-
-        async function iniciarAudio() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-                mediaRecorder.onstop = () => {
-                    const blob = new Blob(audioChunks, { type: 'audio/ogg; codecs=opus' });
-                    const reader = new FileReader();
-                    reader.onload = e => socket.emit('chat message', { room: sala, user: user, audio: e.target.result, type: 'audio' });
-                    reader.readAsDataURL(blob);
-                    audioChunks = [];
-                };
-                mediaRecorder.start();
-            } catch(e) { alert("Microfone não permitido."); }
-        }
-        function pararAudio() { if(mediaRecorder) mediaRecorder.stop(); }
+        socket.on('error message', msg => { alert(msg); location.reload(); });
+        window.addEventListener('resize', resize);
     </script>
 </body>
 </html>
