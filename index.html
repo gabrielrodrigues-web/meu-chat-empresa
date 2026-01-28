@@ -30,15 +30,15 @@
 
         .chat-sidebar { width: 550px; border-left: 3px solid var(--main); display: flex; flex-direction: column; background: var(--bg); z-index: 10; }
         #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { background: rgba(0,0,0,0.03); padding: 12px; border-left: 4px solid var(--main); color: var(--text); }
-        .msg img { max-width: 100%; border-radius: 5px; margin-top: 5px; }
-        .msg audio { width: 100%; margin-top: 5px; }
+        .msg { background: rgba(0,0,0,0.03); padding: 12px; border-left: 4px solid var(--main); color: var(--text); word-wrap: break-word; }
+        .msg img { max-width: 100%; border-radius: 5px; margin-top: 5px; display: block; border: 1px solid var(--main); }
+        .msg audio { width: 100%; margin-top: 5px; display: block; }
+
         .input-area { padding: 15px; border-top: 1px solid rgba(0,0,0,0.1); }
         #msg-in { width: 100%; padding: 12px; border: 1px solid var(--main); background: none; color: var(--text); margin-bottom: 10px; }
         .controls { display: flex; gap: 5px; }
         .controls button { flex: 1; padding: 10px; border: 1px solid var(--main); background: none; color: var(--main); font-weight: bold; cursor: pointer; }
-        .controls button.recording { background: red; color: white; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .controls button.active-rec { background: #ff0000; color: #fff; border-color: #ff0000; }
     </style>
 </head>
 <body>
@@ -71,13 +71,11 @@
                 <div id="messages"></div>
                 <div class="input-area">
                     <input type="text" id="msg-in" placeholder="Mensagem..." onkeypress="if(event.key==='Enter') enviar()">
-                    
-                    <input type="file" id="upload-img" accept="image/*" style="display: none;" onchange="processarImagem(this)">
-                    
+                    <input type="file" id="up-img" accept="image/*" style="display:none" onchange="uploadImg(this)">
                     <div class="controls">
                         <button onclick="enviar()">ENVIAR</button>
-                        <button onclick="document.getElementById('upload-img').click()">IMAGEM</button>
-                        <button id="btn-rec" onclick="toggleGravacao()">🎤 GRAVAR</button>
+                        <button onclick="document.getElementById('up-img').click()">IMAGEM</button>
+                        <button id="btn-rec" onclick="handleAudio()">🎤 GRAVAR</button>
                     </div>
                 </div>
             </div>
@@ -92,10 +90,9 @@
         const ctx = canvas.getContext('2d');
         let particles = [];
         
-        // Variáveis de áudio
-        let mediaRecorder;
-        let audioChunks = [];
-        let isRecording = false;
+        let recorder;
+        let chunks = [];
+        let isRec = false;
 
         function showAchievement(txt) {
             const el = document.getElementById('achievement-msg');
@@ -163,75 +160,50 @@
 
         function resize() { canvas.width = window.innerWidth - 550; canvas.height = window.innerHeight; }
         
-        // --- FUNÇÕES DE CHAT (Texto, Imagem, Audio) ---
-
         function enviar() {
             const i = document.getElementById('msg-in');
             if(i.value) socket.emit('chat message', { room: sala, user: user, text: i.value });
             i.value = "";
         }
 
-        // Processar Imagem
-        function processarImagem(input) {
-            if (input.files && input.files[0]) {
+        function uploadImg(input) {
+            if (input.files[0]) {
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    socket.emit('chat message', { room: sala, user: user, image: e.target.result });
-                };
+                reader.onload = (e) => socket.emit('chat message', { room: sala, user: user, img: e.target.result });
                 reader.readAsDataURL(input.files[0]);
-                input.value = ''; // Limpa para permitir enviar a mesma imagem de novo se quiser
             }
         }
 
-        // Processar Gravação de Voz
-        async function toggleGravacao() {
+        async function handleAudio() {
             const btn = document.getElementById('btn-rec');
-            
-            if (!isRecording) {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRecorder = new MediaRecorder(stream);
-                    audioChunks = [];
-                    
-                    mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
-                    
-                    mediaRecorder.onstop = () => {
-                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' }); // ou 'audio/mp3' dependendo do suporte
-                        const reader = new FileReader();
-                        reader.readAsDataURL(audioBlob);
-                        reader.onloadend = () => {
-                            socket.emit('chat message', { room: sala, user: user, audio: reader.result });
-                        };
-                        // Para o stream para desligar o microfone
-                        stream.getTracks().forEach(track => track.stop());
-                    };
-
-                    mediaRecorder.start();
-                    isRecording = true;
-                    btn.classList.add('recording');
-                    btn.innerText = "🛑 PARAR";
-                } catch(err) {
-                    alert("Erro ao acessar microfone: " + err);
-                }
+            if (!isRec) {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                recorder = new MediaRecorder(stream);
+                chunks = [];
+                recorder.ondataavailable = e => chunks.push(e.data);
+                recorder.onstop = () => {
+                    const blob = new Blob(chunks, { type: 'audio/webm' });
+                    const reader = new FileReader();
+                    reader.onload = (e) => socket.emit('chat message', { room: sala, user: user, audio: e.target.result });
+                    reader.readAsDataURL(blob);
+                    stream.getTracks().forEach(t => t.stop());
+                };
+                recorder.start();
+                isRec = true; btn.innerText = "🛑 PARAR"; btn.classList.add('active-rec');
             } else {
-                mediaRecorder.stop();
-                isRecording = false;
-                btn.classList.remove('recording');
-                btn.innerText = "🎤 GRAVAR";
+                recorder.stop();
+                isRec = false; btn.innerText = "🎤 GRAVAR"; btn.classList.remove('active-rec');
             }
         }
 
-        // Renderizar Mensagem
         socket.on('chat message', d => {
             const m = document.getElementById('messages');
             const div = document.createElement('div');
             div.className = "msg";
-            
             let content = `<b>${d.user}:</b><br>`;
-            if(d.text) content += d.text;
-            if(d.image) content += `<img src="${d.image}">`;
+            if(d.text) content += `<span>${d.text}</span>`;
+            if(d.img) content += `<img src="${d.img}">`;
             if(d.audio) content += `<audio controls src="${d.audio}"></audio>`;
-            
             div.innerHTML = content;
             m.appendChild(div);
             m.scrollTop = m.scrollHeight;
