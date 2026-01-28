@@ -45,7 +45,7 @@
     <div id="login-screen">
         <div class="login-box">
             <h1 style="color:#ff0055">BIPOLAR</h1>
-            <input type="text" id="nick" placeholder="NOME DE GUERRA...">
+            <input type="text" id="nick" placeholder="APELIDO">
             <button onclick="entrar()" style="width:100%; padding:15px; background:#ff0055; color:#fff; border:none; font-weight:bold; cursor:pointer;">ACESSAR</button>
         </div>
     </div>
@@ -88,12 +88,24 @@
         let mediaRecorder, audioChunks = [];
 
         function entrar() {
-            user = document.getElementById('nick').value;
-            if(!user) return alert("Digite seu nome!");
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('main-app').style.display = 'flex';
-            resize(); animate();
-            socket.emit('join room', sala);
+            const inputNome = document.getElementById('nick');
+            const nomeDigitado = inputNome.value.trim();
+            
+            if(!nomeDigitado) return alert("Digite seu apelido!");
+
+            // MUDANÇA AQUI: Verifica com o servidor se o nome está livre
+            socket.emit('login request', nomeDigitado, (permitido) => {
+                if (permitido) {
+                    user = nomeDigitado;
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('main-app').style.display = 'flex';
+                    resize(); animate();
+                    socket.emit('join room', sala);
+                } else {
+                    alert("Esse apelido já está em uso! Escolha outro.");
+                    inputNome.value = ""; // Limpa o campo
+                }
+            });
         }
 
         function renderMessages() {
