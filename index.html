@@ -6,48 +6,38 @@
     <script src="/socket.io/socket.io.js"></script>
     <style>
         :root { --main: #ffb7ce; --bg: #ffffff; --text: #000; }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', Courier, monospace; }
-        body { background: var(--bg); height: 100vh; overflow: hidden; color: var(--text); transition: 0.5s; display: flex; }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', monospace; }
+        body { background: var(--bg); height: 100vh; overflow: hidden; color: var(--text); display: flex; transition: 0.5s; }
         #login-screen { position: fixed; inset: 0; background: #000; z-index: 2000; display: flex; align-items: center; justify-content: center; }
-        .login-box { border: 3px solid #ff0055; padding: 40px; border-radius: 10px; text-align: center; background: #000; width: 380px; box-shadow: 0 0 20px rgba(255,0,85,0.3); }
-        .login-box input { width: 100%; padding: 12px; margin-top: 15px; background: #000; border: 1px solid #ff0055; color: #00ff00; font-weight: bold; outline: none; }
-        .login-box input::placeholder { color: #006600; }
-        
-        #main-app { display: none; width: 100%; height: 100%; position: relative; }
-        #canvas-particles { position: absolute; top: 0; left: 0; width: calc(100% - 550px); height: 100%; cursor: crosshair; z-index: 1; }
-
-        .stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 5; pointer-events: none; }
-        .nav-bar { position: absolute; top: 20px; left: 20px; display: flex; gap: 10px; pointer-events: auto; }
+        .login-box { border: 3px solid #ff0055; padding: 40px; text-align: center; width: 380px; background: #000; }
+        .login-box input { width: 100%; padding: 12px; margin-top: 15px; background: #000; border: 1px solid #ff0055; color: #00ff00; outline: none; }
+        #main-app { display: none; width: 100%; height: 100%; }
+        #canvas-particles { position: absolute; inset: 0; width: calc(100% - 550px); height: 100%; z-index: 1; cursor: crosshair; }
+        .stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 5; pointer-events: none; }
+        #ranking-box { position: absolute; top: 80px; left: 20px; background: rgba(0,0,0,0.05); padding: 10px; border: 1px solid var(--main); width: 230px; pointer-events: auto; }
+        .nav-bar { position: absolute; top: 20px; left: 20px; pointer-events: auto; }
         .nav-btn { padding: 10px 15px; border: 2px solid var(--main); cursor: pointer; background: var(--bg); color: var(--text); font-weight: bold; }
         .nav-btn.active { background: var(--main); color: #fff; }
-
-        #ranking-box { position: absolute; top: 80px; left: 20px; background: rgba(0,0,0,0.05); padding: 10px; border: 1px solid var(--main); width: 180px; z-index: 100; }
-        #big-icon { font-size: 100px; filter: drop-shadow(0 0 10px var(--main)); transition: 0.3s; }
-        #score { font-size: 50px; font-weight: bold; color: var(--main); }
-
-        #achievement-msg { height: 50px; font-size: 20px; font-weight: bold; color: #ff0000; text-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000; opacity: 0; transition: opacity 0.3s; text-align: center; margin-top: 10px; }
-
+        #big-icon { font-size: 100px; }
+        #score { font-size: 60px; font-weight: bold; color: var(--main); }
+        #achievement-msg { height: 60px; font-size: 20px; font-weight: bold; color: #ff0000; text-align: center; opacity: 0; transition: 0.3s; }
         .chat-sidebar { width: 550px; border-left: 3px solid var(--main); display: flex; flex-direction: column; background: var(--bg); z-index: 10; }
-        #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { background: rgba(0,0,0,0.03); padding: 12px; border-left: 4px solid var(--main); color: var(--text); word-wrap: break-word; }
-        .msg img { max-width: 100%; border-radius: 5px; margin-top: 5px; display: block; border: 1px solid var(--main); }
-        .msg audio { width: 100%; margin-top: 5px; display: block; }
-
-        .input-area { padding: 15px; border-top: 1px solid rgba(0,0,0,0.1); }
-        #msg-in { width: 100%; padding: 12px; border: 1px solid var(--main); background: none; color: var(--text); margin-bottom: 10px; }
+        #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; }
+        .msg { background: rgba(0,0,0,0.03); padding: 10px; border-left: 4px solid var(--main); }
+        .msg img { max-width: 100%; margin-top: 5px; border-radius: 5px; }
+        .input-area { padding: 15px; border-top: 1px solid #ddd; }
+        #msg-in { width: 100%; padding: 10px; border: 1px solid var(--main); background: none; color: var(--text); margin-bottom: 10px; }
         .controls { display: flex; gap: 5px; }
-        .controls button { flex: 1; padding: 10px; border: 1px solid var(--main); background: none; color: var(--main); font-weight: bold; cursor: pointer; }
-        .controls button.active-rec { background: #ff0000; color: #fff; border-color: #ff0000; }
+        .controls button { flex: 1; padding: 10px; border: 1px solid var(--main); background: none; color: var(--main); cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
     <div id="login-screen">
         <div class="login-box">
-            <h1 style="color:#ff0055; text-shadow: 0 0 10px #ff0055;">BIPOLAR</h1>
+            <h1 style="color:#ff0055;">BIPOLAR</h1>
             <input type="text" id="nick" placeholder="APELIDO" maxlength="10">
-            <input type="password" id="pass" placeholder="SENHA DO USUÁRIO">
-            <button onclick="entrar()" style="width:100%; padding:10px; background:#ff0055; color:#fff; border:none; cursor:pointer; margin-top:15px; font-weight:bold;">ACESSAR</button>
+            <input type="password" id="pass" placeholder="SENHA">
+            <button onclick="entrar()" style="width:100%; padding:10px; margin-top:10px; background:#ff0055; color:#fff; border:none; cursor:pointer;">ACESSAR</button>
         </div>
     </div>
 
@@ -56,11 +46,11 @@
         <div style="display:flex; width:100%; height:100%;">
             <div class="stage">
                 <div class="nav-bar">
-                    <button id="btn-sky" class="nav-btn active" onclick="mudar('sky')">MODO CÉU 💖</button>
-                    <button id="btn-hell" class="nav-btn" onclick="mudar('hell')">MODO INFERNAL 💀</button>
+                    <button id="btn-sky" class="nav-btn active" onclick="mudar('sky')">CÉU 💖</button>
+                    <button id="btn-hell" class="nav-btn" onclick="mudar('hell')">INFERNO 💀</button>
                 </div>
                 <div id="ranking-box">
-                    <div style="font-weight:bold; text-align:center; border-bottom: 2px solid var(--main);">TOP 5 ELITE</div>
+                    <div style="font-weight:bold; text-align:center; border-bottom:1px solid var(--main);">TOP 5 ELITE</div>
                     <div id="ranking-list"></div>
                 </div>
                 <div id="big-icon">💖</div>
@@ -70,12 +60,12 @@
             <div class="chat-sidebar">
                 <div id="messages"></div>
                 <div class="input-area">
-                    <input type="text" id="msg-in" placeholder="Mensagem..." onkeypress="if(event.key==='Enter') enviar()">
+                    <input type="text" id="msg-in" placeholder="Escreva..." onkeypress="if(event.key==='Enter') enviar()">
                     <input type="file" id="up-img" accept="image/*" style="display:none" onchange="uploadImg(this)">
                     <div class="controls">
                         <button onclick="enviar()">ENVIAR</button>
-                        <button onclick="document.getElementById('up-img').click()">IMAGEM</button>
-                        <button id="btn-rec" onclick="handleAudio()">🎤 GRAVAR</button>
+                        <button onclick="document.getElementById('up-img').click()">FOTO</button>
+                        <button id="btn-rec" onclick="handleAudio()">GRAVAR</button>
                     </div>
                 </div>
             </div>
@@ -84,12 +74,16 @@
 
     <script>
         const socket = io();
-        let user = "", sala = "sky";
-        let placar = { sky: 0, hell: 0 };
+        let user = "", sala = "sky", placar = { sky:0, hell:0 };
         const canvas = document.getElementById('canvas-particles');
         const ctx = canvas.getContext('2d');
-        let particles = [];
-        let recorder; let chunks = []; let isRec = false;
+        let particles = [], recorder, chunks = [], isRec = false;
+
+        function showAchievement(txt) {
+            const el = document.getElementById('achievement-msg');
+            el.innerText = txt; el.style.opacity = '1';
+            setTimeout(() => el.style.opacity = '0', 3000);
+        }
 
         function entrar() {
             const n = document.getElementById('nick').value.trim();
@@ -97,35 +91,42 @@
             if(!n || !p) return;
             socket.emit('login request', { nickname: n, password: p }, (res) => {
                 if(res.success) {
-                    user = n;
+                    user = n; placar = res.scores;
                     document.getElementById('login-screen').style.display = 'none';
-                    document.getElementById('main-app').style.display = 'flex';
-                    resize(); animate();
-                    socket.emit('join room', sala);
-                } else alert(res.message);
+                    document.getElementById('main-app').style.display = 'block';
+                    document.getElementById('score').innerText = placar[sala];
+                    resize(); animate(); socket.emit('join room', sala);
+                } else alert(res.message || "Erro");
             });
         }
 
         function mudar(m) {
             sala = m;
-            const root = document.documentElement;
             const isSky = m === 'sky';
-            root.style.setProperty('--main', isSky ? '#ffb7ce' : '#ff3300');
-            root.style.setProperty('--bg', isSky ? '#ffffff' : '#000000');
-            root.style.setProperty('--text', isSky ? '#000' : '#ffffff');
+            document.documentElement.style.setProperty('--main', isSky ? '#ffb7ce' : '#ff3300');
+            document.documentElement.style.setProperty('--bg', isSky ? '#ffffff' : '#000000');
+            document.documentElement.style.setProperty('--text', isSky ? '#000' : '#ffffff');
             document.getElementById('big-icon').innerText = isSky ? '💖' : '💀';
             document.getElementById('btn-sky').classList.toggle('active', isSky);
             document.getElementById('btn-hell').classList.toggle('active', !isSky);
             document.getElementById('score').innerText = placar[sala];
-            particles = [];
             socket.emit('join room', sala);
         }
 
         canvas.addEventListener('mousedown', (e) => {
             particles.forEach((p) => {
-                if(!p.exploded && e.clientX > p.x && e.clientX < p.x + 50 && e.clientY > p.y - 50 && e.clientY < p.y) {
+                if(!p.exploded && e.clientX > p.x && e.clientX < p.x+50 && e.clientY > p.y-50 && e.clientY < p.y) {
                     p.exploded = true; placar[sala]++;
-                    document.getElementById('score').innerText = placar[sala];
+                    const pt = placar[sala];
+                    document.getElementById('score').innerText = pt;
+                    
+                    // Alertas de Conquista
+                    if(pt === 100) showAchievement("Nível 💩: Tá ruim hein!");
+                    if(pt === 200) showAchievement("Nível 🤡: Começou a brincadeira!");
+                    if(pt === 300) showAchievement("Nível ⚡: Tá ficando elétrico!");
+                    if(pt === 500) showAchievement("Nível 🛡️: Um verdadeiro Guardião!");
+                    if(pt === 1000) showAchievement("Nível 👑: O REI DA BIPOLARIDADE!");
+
                     socket.emit('update score', { room: sala });
                 }
             });
@@ -152,47 +153,38 @@
 
         function uploadImg(input) {
             if (input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = (e) => socket.emit('chat message', { room: sala, user: user, img: e.target.result });
-                reader.readAsDataURL(input.files[0]);
+                const r = new FileReader();
+                r.onload = (e) => socket.emit('chat message', { room: sala, user: user, img: e.target.result });
+                r.readAsDataURL(input.files[0]);
             }
         }
 
         async function handleAudio() {
-            const btn = document.getElementById('btn-rec');
-            if (!isRec) {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    recorder = new MediaRecorder(stream);
-                    chunks = [];
-                    recorder.ondataavailable = e => chunks.push(e.data);
-                    recorder.onstop = () => {
-                        const blob = new Blob(chunks, { type: 'audio/webm' });
-                        const reader = new FileReader();
-                        reader.onload = (e) => socket.emit('chat message', { room: sala, user: user, audio: e.target.result });
-                        reader.readAsDataURL(blob);
-                        stream.getTracks().forEach(t => t.stop());
-                    };
-                    recorder.start();
-                    isRec = true; btn.innerText = "🛑 PARAR"; btn.classList.add('active-rec');
-                } catch(e) { alert("Microfone não permitido."); }
+            const b = document.getElementById('btn-rec');
+            if(!isRec) {
+                const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+                recorder = new MediaRecorder(s); chunks = [];
+                recorder.ondataavailable = e => chunks.push(e.data);
+                recorder.onstop = () => {
+                    const blob = new Blob(chunks, { type: 'audio/webm' });
+                    const r = new FileReader();
+                    r.onload = (e) => socket.emit('chat message', { room: sala, user: user, audio: e.target.result });
+                    r.readAsDataURL(blob);
+                };
+                recorder.start(); isRec = true; b.innerText = "PARAR"; b.style.color = "red";
             } else {
-                recorder.stop();
-                isRec = false; btn.innerText = "🎤 GRAVAR"; btn.classList.remove('active-rec');
+                recorder.stop(); isRec = false; b.innerText = "GRAVAR"; b.style.color = "var(--main)";
             }
         }
 
         socket.on('chat message', d => {
             const m = document.getElementById('messages');
-            const div = document.createElement('div');
-            div.className = "msg";
-            let content = `<b>${d.user}:</b><br>`;
-            if(d.text) content += `<span>${d.text}</span>`;
-            if(d.img) content += `<img src="${d.img}">`;
-            if(d.audio) content += `<audio controls src="${d.audio}"></audio>`;
-            div.innerHTML = content;
-            m.appendChild(div);
-            m.scrollTop = m.scrollHeight;
+            const div = document.createElement('div'); div.className = "msg";
+            let h = `<b>${d.user}:</b><br>`;
+            if(d.text) h += `<span>${d.text}</span>`;
+            if(d.img) h += `<img src="${d.img}">`;
+            if(d.audio) h += `<audio controls src="${d.audio}"></audio>`;
+            div.innerHTML = h; m.appendChild(div); m.scrollTop = m.scrollHeight;
         });
 
         socket.on('update ranking', r => {
@@ -200,7 +192,7 @@
         });
 
         socket.on('error message', msg => { alert(msg); location.reload(); });
-        window.addEventListener('resize', resize);
+        window.onresize = resize;
     </script>
 </body>
 </html>
