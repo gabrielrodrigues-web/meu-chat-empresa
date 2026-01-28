@@ -3,7 +3,7 @@ const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http, { 
     cors: { origin: "*" },
-    maxHttpBufferSize: 1e8 // Permite arquivos de até 100MB
+    maxHttpBufferSize: 1e8 
 });
 
 const connectedUsers = {}; 
@@ -21,31 +21,27 @@ io.on('connection', (socket) => {
     const userIP = socket.handshake.address;
     const now = Date.now();
 
-    // Bloqueio por IP progressivo
     if (ipBanHistory[userIP] && now < ipBanHistory[userIP].expires) {
         const resto = Math.ceil((ipBanHistory[userIP].expires - now) / 60000);
-        socket.emit('error message', `ACESSO NEGADO. Você ainda está banido por ${resto} min.`);
+        socket.emit('error message', `ACESSO NEGADO. Você está banido por mais ${resto} min.`);
         socket.disconnect();
         return;
     }
 
     socket.on('login request', (data, callback) => {
-        // --- SOLUÇÃO PARA O ERRO DA IMAGEM (TRIM UNDEFINED) ---
+        // PROTEÇÃO TOTAL CONTRA O ERRO DA SUA IMAGEM (TRIM UNDEFINED)
         if (!data || !data.nickname || typeof data.nickname !== 'string') {
-            return callback({ success: false, message: "Dados de login inválidos!" });
+            return callback({ success: false, message: "Apelido inválido!" });
         }
 
         const cleanName = data.nickname.trim().substring(0, 10);
         const nameLower = cleanName.toLowerCase();
         const password = data.password;
 
-        if (cleanName.length === 0) {
-            return callback({ success: false, message: "O apelido não pode ser vazio!" });
-        }
+        if (cleanName.length === 0) return callback({ success: false, message: "Digite um apelido!" });
 
         const isOnline = Object.values(connectedUsers).some(u => u.toLowerCase() === nameLower);
 
-        // Lógica de Senha e Reserva
         if (userPasswords[nameLower]) {
             if (userPasswords[nameLower] !== password) {
                 return callback({ success: false, message: "Senha incorreta!" });
@@ -63,32 +59,54 @@ io.on('connection', (socket) => {
         }
     });
 
+    // SISTEMA DE BANIMENTO CORRIGIDO
     socket.on('admin ban', (data) => {
         if (data.password === ADMIN_PASSWORD) {
             const targetName = data.targetName;
+            if (!targetName) return;
             const targetLower = targetName.toLowerCase();
-            delete userScores[targetName];
-            delete reservedNames[targetLower];
 
+            // 1. Remove do Ranking na hora
+            // Procuramos a chave exata no objeto de scores
+            Object.keys(userScores).forEach(name => {
+                if(name.toLowerCase() === targetLower) delete userScores[name];
+            });
+
+            // 2. Procura o usuário para expulsar e banir IP
+            let expulsou = false;
             for (const [id, name] of Object.entries(connectedUsers)) {
                 if (name.toLowerCase() === targetLower) {
                     const targetSocket = io.sockets.sockets.get(id);
                     if (targetSocket) {
                         const ip = targetSocket.handshake.address;
+                        
                         if (!ipBanHistory[ip]) ipBanHistory[ip] = { count: 0, expires: 0 };
                         ipBanHistory[ip].count++;
                         const banTime = ipBanHistory[ip].count === 1 ? 1 : (ipBanHistory[ip].count - 1) * 5;
                         ipBanHistory[ip].expires = Date.now() + (banTime * 60000);
                         
-                        const aviso = `🚨 SISTEMA: ${targetName} foi banido por ${banTime} minutos.`;
+                        // Mensagem no Chat para todos os usuários
+                        const aviso = `🚨 SISTEMA: O usuário "${name}" foi BANIDO por ${banTime} minutos.`;
                         io.emit('chat message', { room: 'sky', user: '🛡️ ADMIN', text: aviso });
                         io.emit('chat message', { room: 'hell', user: '🛡️ ADMIN', text: aviso });
 
+                        // Expulsa o socket
                         targetSocket.emit('error message', `Você foi banido por ${banTime} minutos.`);
                         targetSocket.disconnect();
+                        delete connectedUsers[id];
+                        expulsou = true;
                     }
                 }
             }
+
+            // Se o cara não estava online mas estava no rank, a gente avisa
+            if(!expulsou) {
+                 const aviso = `🚨 SISTEMA: "${targetName}" foi removido do ranking pelo ADMIN.`;
+                 io.emit('chat message', { room: 'sky', user: '🛡️ ADMIN', text: aviso });
+                 io.emit('chat message', { room: 'hell', user: '🛡️ ADMIN', text: aviso });
+            }
+
+            // 3. Atualiza os rankings de quem ficou
             enviarRanking('sky');
             enviarRanking('hell');
         }
@@ -108,7 +126,6 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Repassa texto, imagem ou áudio
     socket.on('chat message', (msg) => io.to(msg.room).emit('chat message', msg));
 
     socket.on('disconnect', () => {
