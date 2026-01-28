@@ -10,7 +10,9 @@
         body { background: var(--bg); height: 100vh; overflow: hidden; color: var(--text); transition: 0.5s; display: flex; }
 
         #login-screen { position: fixed; inset: 0; background: #000; z-index: 2000; display: flex; align-items: center; justify-content: center; }
-        .login-box { border: 3px solid #ff0055; padding: 40px; border-radius: 10px; text-align: center; background: #050505; width: 350px; }
+        .login-box { border: 3px solid #ff0055; padding: 40px; border-radius: 10px; text-align: center; background: #000; width: 380px; box-shadow: 0 0 20px rgba(255,0,85,0.3); }
+        .login-box input { width: 100%; padding: 12px; margin-top: 15px; background: #000; border: 1px solid #ff0055; color: #00ff00; font-weight: bold; outline: none; }
+        .login-box input::placeholder { color: #006600; }
         
         #main-app { display: none; width: 100%; height: 100%; position: relative; }
         #canvas-particles { position: absolute; top: 0; left: 0; width: calc(100% - 550px); height: 100%; cursor: crosshair; z-index: 1; }
@@ -21,38 +23,31 @@
         .nav-btn.active { background: var(--main); color: #fff; }
 
         #ranking-box { position: absolute; top: 80px; left: 20px; background: rgba(0,0,0,0.05); padding: 10px; border: 1px solid var(--main); width: 180px; z-index: 100; }
-        
         #big-icon { font-size: 100px; filter: drop-shadow(0 0 10px var(--main)); transition: 0.3s; }
-        #score { font-size: 50px; font-weight: bold; color: var(--main); margin-bottom: 5px; }
+        #score { font-size: 50px; font-weight: bold; color: var(--main); }
 
-        /* NOVO: Estilo Neon para Conquistas */
-        #achievement-msg { 
-            height: 40px; 
-            font-size: 22px; 
-            font-weight: bold; 
-            color: #ff0000; 
-            text-shadow: 0 0 8px #ff0000, 0 0 15px #ff0000; 
-            opacity: 0; 
-            transition: opacity 0.3s;
-            text-align: center;
-        }
+        #achievement-msg { height: 50px; font-size: 20px; font-weight: bold; color: #ff0000; text-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000; opacity: 0; transition: opacity 0.3s; text-align: center; margin-top: 10px; }
 
         .chat-sidebar { width: 550px; border-left: 3px solid var(--main); display: flex; flex-direction: column; background: var(--bg); z-index: 10; }
         #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { background: rgba(0,0,0,0.03); padding: 12px; border: 1px solid rgba(0,0,0,0.1); border-left: 4px solid var(--main); }
-        
+        .msg { background: rgba(0,0,0,0.03); padding: 12px; border-left: 4px solid var(--main); color: var(--text); }
+        .msg img { max-width: 100%; border-radius: 5px; margin-top: 5px; }
+        .msg audio { width: 100%; margin-top: 5px; }
         .input-area { padding: 15px; border-top: 1px solid rgba(0,0,0,0.1); }
         #msg-in { width: 100%; padding: 12px; border: 1px solid var(--main); background: none; color: var(--text); margin-bottom: 10px; }
         .controls { display: flex; gap: 5px; }
         .controls button { flex: 1; padding: 10px; border: 1px solid var(--main); background: none; color: var(--main); font-weight: bold; cursor: pointer; }
+        .controls button.recording { background: red; color: white; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
     <div id="login-screen">
         <div class="login-box">
-            <h1 style="color:#ff0055">BIPOLAR</h1>
+            <h1 style="color:#ff0055; text-shadow: 0 0 10px #ff0055;">BIPOLAR</h1>
             <input type="text" id="nick" placeholder="APELIDO" maxlength="10">
-            <button onclick="entrar()" style="width:100%; padding:10px; background:#ff0055; color:#fff; border:none; cursor:pointer; margin-top:15px;">ACESSAR</button>
+            <input type="password" id="pass" placeholder="SENHA DO USUÁRIO">
+            <button onclick="entrar()" style="width:100%; padding:10px; background:#ff0055; color:#fff; border:none; cursor:pointer; margin-top:15px; font-weight:bold;">ACESSAR</button>
         </div>
     </div>
 
@@ -76,10 +71,13 @@
                 <div id="messages"></div>
                 <div class="input-area">
                     <input type="text" id="msg-in" placeholder="Mensagem..." onkeypress="if(event.key==='Enter') enviar()">
+                    
+                    <input type="file" id="upload-img" accept="image/*" style="display: none;" onchange="processarImagem(this)">
+                    
                     <div class="controls">
                         <button onclick="enviar()">ENVIAR</button>
-                        <button>IMAGEM</button>
-                        <button>🎤 GRAVAR</button>
+                        <button onclick="document.getElementById('upload-img').click()">IMAGEM</button>
+                        <button id="btn-rec" onclick="toggleGravacao()">🎤 GRAVAR</button>
                     </div>
                 </div>
             </div>
@@ -93,18 +91,23 @@
         const canvas = document.getElementById('canvas-particles');
         const ctx = canvas.getContext('2d');
         let particles = [];
+        
+        // Variáveis de áudio
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
 
-        function showAchievement(text) {
+        function showAchievement(txt) {
             const el = document.getElementById('achievement-msg');
-            el.innerText = text;
-            el.style.opacity = '1';
+            el.innerText = txt; el.style.opacity = '1';
             setTimeout(() => { el.style.opacity = '0'; }, 2000);
         }
 
         function entrar() {
             const n = document.getElementById('nick').value.trim();
-            if(!n) return;
-            socket.emit('login request', n, (res) => {
+            const p = document.getElementById('pass').value;
+            if(!n || !p) return;
+            socket.emit('login request', { nickname: n, password: p }, (res) => {
                 if(res.success) {
                     user = n;
                     document.getElementById('login-screen').style.display = 'none';
@@ -118,19 +121,13 @@
         function mudar(m) {
             sala = m;
             const root = document.documentElement;
-            if(m === 'sky') {
-                root.style.setProperty('--main', '#ffb7ce');
-                root.style.setProperty('--bg', '#ffffff');
-                root.style.setProperty('--text', '#000');
-                document.getElementById('big-icon').innerText = '💖';
-            } else {
-                root.style.setProperty('--main', '#ff3300');
-                root.style.setProperty('--bg', '#000000');
-                root.style.setProperty('--text', '#ffffff');
-                document.getElementById('big-icon').innerText = '💀';
-            }
-            document.getElementById('btn-sky').classList.toggle('active', m === 'sky');
-            document.getElementById('btn-hell').classList.toggle('active', m === 'hell');
+            const isSky = m === 'sky';
+            root.style.setProperty('--main', isSky ? '#ffb7ce' : '#ff3300');
+            root.style.setProperty('--bg', isSky ? '#ffffff' : '#000000');
+            root.style.setProperty('--text', isSky ? '#000' : '#ffffff');
+            document.getElementById('big-icon').innerText = isSky ? '💖' : '💀';
+            document.getElementById('btn-sky').classList.toggle('active', isSky);
+            document.getElementById('btn-hell').classList.toggle('active', !isSky);
             document.getElementById('score').innerText = placar[sala];
             particles = [];
             socket.emit('join room', sala);
@@ -139,21 +136,14 @@
         canvas.addEventListener('mousedown', (e) => {
             particles.forEach((p) => {
                 if(!p.exploded && e.clientX > p.x && e.clientX < p.x + 50 && e.clientY > p.y - 50 && e.clientY < p.y) {
-                    p.exploded = true;
-                    placar[sala]++;
+                    p.exploded = true; placar[sala]++;
                     document.getElementById('score').innerText = placar[sala];
-                    
-                    let pTotal = placar[sala];
-                    // SUBSTITUÍDO: Agora usa o efeito Neon em vez do alert
-                    if(pTotal === 100) showAchievement("Caramba, você está mandando bem!!!!");
-                    if(pTotal === 200) showAchievement("Você é um verdadeiro viciado em serotonina");
-                    if(pTotal === 300) showAchievement("Nossa, você perdeu a noção do tempo");
-                    if(pTotal === 400) showAchievement("você é um gênio da mira");
-                    if(pTotal === 500) { 
-                        showAchievement("parabéns, você agora é o rei de explodir balões"); 
-                        if(!user.includes("👑")) user += " 👑"; 
-                    }
-                    
+                    const pt = placar[sala];
+                    if(pt === 100) showAchievement("Caramba, você está mandando bem!!!!");
+                    else if(pt === 200) showAchievement("Você é um verdadeiro viciado em serotonina");
+                    else if(pt === 300) showAchievement("Nossa, você perdeu a noção do tempo");
+                    else if(pt === 400) showAchievement("você é um gênio da mira");
+                    else if(pt === 500) { showAchievement("parabéns, você agora é o rei 👑"); if(!user.includes("👑")) user += " 👑"; }
                     socket.emit('update score', { room: sala });
                 }
             });
@@ -172,17 +162,77 @@
         }
 
         function resize() { canvas.width = window.innerWidth - 550; canvas.height = window.innerHeight; }
+        
+        // --- FUNÇÕES DE CHAT (Texto, Imagem, Audio) ---
+
         function enviar() {
             const i = document.getElementById('msg-in');
             if(i.value) socket.emit('chat message', { room: sala, user: user, text: i.value });
             i.value = "";
         }
 
+        // Processar Imagem
+        function processarImagem(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    socket.emit('chat message', { room: sala, user: user, image: e.target.result });
+                };
+                reader.readAsDataURL(input.files[0]);
+                input.value = ''; // Limpa para permitir enviar a mesma imagem de novo se quiser
+            }
+        }
+
+        // Processar Gravação de Voz
+        async function toggleGravacao() {
+            const btn = document.getElementById('btn-rec');
+            
+            if (!isRecording) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    
+                    mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
+                    
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' }); // ou 'audio/mp3' dependendo do suporte
+                        const reader = new FileReader();
+                        reader.readAsDataURL(audioBlob);
+                        reader.onloadend = () => {
+                            socket.emit('chat message', { room: sala, user: user, audio: reader.result });
+                        };
+                        // Para o stream para desligar o microfone
+                        stream.getTracks().forEach(track => track.stop());
+                    };
+
+                    mediaRecorder.start();
+                    isRecording = true;
+                    btn.classList.add('recording');
+                    btn.innerText = "🛑 PARAR";
+                } catch(err) {
+                    alert("Erro ao acessar microfone: " + err);
+                }
+            } else {
+                mediaRecorder.stop();
+                isRecording = false;
+                btn.classList.remove('recording');
+                btn.innerText = "🎤 GRAVAR";
+            }
+        }
+
+        // Renderizar Mensagem
         socket.on('chat message', d => {
             const m = document.getElementById('messages');
             const div = document.createElement('div');
             div.className = "msg";
-            div.innerHTML = `<b>${d.user}:</b><br>${d.text}`;
+            
+            let content = `<b>${d.user}:</b><br>`;
+            if(d.text) content += d.text;
+            if(d.image) content += `<img src="${d.image}">`;
+            if(d.audio) content += `<audio controls src="${d.audio}"></audio>`;
+            
+            div.innerHTML = content;
             m.appendChild(div);
             m.scrollTop = m.scrollHeight;
         });
